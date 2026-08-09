@@ -46,7 +46,7 @@ function Footer() {
 
         <nav aria-label="Footer">
           <p className="text-2xs font-bold uppercase tracking-widest text-msr-300">{L.footer.explore}</p>
-          <ul className="mt-3 space-y-2.5 text-sm font-medium">
+          <ul className="mt-3 space-y-2.5 text-[12.5px] font-bold uppercase tracking-wider">
             {NAV_IDS.map(id => (
               <li key={id}><ScrollLink to={id} className="transition hover:text-white">{navLabel(L, id)}</ScrollLink></li>
             ))}
@@ -91,7 +91,7 @@ function SitePage() {
   useEffect(() => { api.get('/enquiries/public/courses').then(setCourses).catch(() => {}); }, []);
   const list = courses.length ? courses : FALLBACK;
 
-  const link = 'text-sm font-medium text-ink-600 transition hover:text-msr-800';
+  const link = 'text-[12.5px] font-bold uppercase tracking-wider text-ink-600 transition hover:text-msr-800';
 
   return (
     <div className="bg-white">
@@ -123,9 +123,9 @@ function SitePage() {
           <div className="animate-fade-up border-t border-ink-200 bg-white px-4 py-3 md:hidden">
             {NAV_IDS.map(id => (
               <ScrollLink key={id} to={id} onClick={() => setMenu(false)}
-                className="block rounded-lg px-2 py-3 text-sm font-semibold text-ink-700 hover:bg-ink-50">{navLabel(L, id)}</ScrollLink>
+                className="block rounded-lg px-2 py-3 text-[13px] font-bold uppercase tracking-wider text-ink-700 hover:bg-ink-50">{navLabel(L, id)}</ScrollLink>
             ))}
-            <Link to="/check" className="block rounded-lg px-2 py-3 text-sm font-semibold text-ink-700 hover:bg-ink-50">{L.check.navLabel}</Link>
+            <Link to="/check" className="block rounded-lg px-2 py-3 text-[13px] font-bold uppercase tracking-wider text-ink-700 hover:bg-ink-50">{L.check.navLabel}</Link>
             <Link to="/login" className="block rounded-lg px-2 py-3 text-sm font-semibold text-ink-500">{L.actions.staffLogin}</Link>
             <div className="px-2 pb-1 pt-2"><LangPicker /></div>
           </div>

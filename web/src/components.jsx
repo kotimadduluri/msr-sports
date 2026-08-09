@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { IconClose, IconAlert, IconCheck, IconInbox } from './icons.jsx';
+import { IconClose, IconAlert, IconCheck, IconInbox, Logo } from './icons.jsx';
 
 /* Printable layer. Whatever is rendered inside lands in a hidden div at the
    end of <body>; @media print hides the app root and shows only this, so a
@@ -10,6 +10,42 @@ export function PrintArea({ children }) {
   return createPortal(
     <div id="print-area" aria-hidden="true">{children}</div>,
     document.body
+  );
+}
+
+/* Standard chrome for every printed document: crest and academy identity on
+   top, a saffron rule, then the body, then a footer with the print date and
+   the computer-generated note. Receipts, cards and any future printout share
+   this one look. */
+export function PrintDoc({ academy = {}, title, children }) {
+  const printedOn = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+  return (
+    <div className="text-sm">
+      <div className="flex items-center gap-3 pb-3">
+        <Logo className="h-12 w-12 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-xl font-bold uppercase leading-tight tracking-wide text-ink-900">
+            {academy.academy_name || 'MSR Sports Academy'}
+          </p>
+          {academy.address && <p className="text-xs leading-snug text-ink-500">{academy.address}</p>}
+          {academy.phone && <p className="text-xs text-ink-500">{academy.phone}</p>}
+        </div>
+        {title && (
+          <p className="shrink-0 self-start rounded-lg bg-ink-100 px-2.5 py-1 text-2xs font-bold uppercase tracking-widest text-ink-600">
+            {title}
+          </p>
+        )}
+      </div>
+      <div className="mb-4 h-1 rounded bg-saffron-400" aria-hidden="true" />
+      {children}
+      <div className="mt-4 border-t border-ink-200 pt-2.5 text-xs text-ink-500">
+        <div className="flex items-baseline justify-between gap-3">
+          <span>{[academy.academy_name || 'MSR Sports Academy', academy.phone].filter(Boolean).join(', ')}</span>
+          <span className="shrink-0">Printed on {printedOn}</span>
+        </div>
+        <p className="mt-0.5">This is a computer-generated document and needs no signature.</p>
+      </div>
+    </div>
   );
 }
 

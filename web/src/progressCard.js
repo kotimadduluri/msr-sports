@@ -108,7 +108,7 @@ async function drawCard(card) {
   ctx.fillStyle = INK; ctx.font = `800 22px ${BODY}`;
   ctx.fillText(clip(ctx, card.student.name, W - PAD * 2 - 150), PAD, y);
   ctx.fillStyle = INK3; ctx.font = `600 12.5px ${BODY}`;
-  const meta = [card.student.admission_no, card.student.course_name, card.student.batch_name].filter(Boolean).join('  ·  ');
+  const meta = [card.student.admission_no, card.student.course_name, card.student.batch_name].filter(Boolean).join(',  ');
   ctx.fillText(clip(ctx, meta, W - PAD * 2), PAD, y + 22);
   if (card.student.target_exam) {
     ctx.font = `700 11px ${BODY}`;
@@ -153,7 +153,7 @@ async function drawCard(card) {
       ctx.fillStyle = INK; ctx.font = `700 15px ${BODY}`;
       ctx.fillText(e.event, PAD, y + 18);
       ctx.fillStyle = INK3; ctx.font = `500 11.5px ${BODY}`;
-      let sub = t ? `target ${fmtTarget(t)}  ·  ${t.exam}` : 'no cut-off set';
+      let sub = t ? `target ${fmtTarget(t)},  ${t.exam}` : 'no cut-off set';
       ctx.fillText(clip(ctx, sub, 330), PAD, y + 36);
       if (e.delta !== null) {
         ctx.fillStyle = improved ? '#157f4d' : INK3;
@@ -196,13 +196,16 @@ async function drawCard(card) {
   const fv = clear ? 'ALL CLEAR' : rupees(card.balance);
   ctx.fillText(fv, W - PAD - 20 - ctx.measureText(fv).width, y + 36);
 
-  // ---- footer
+  // ---- footer: identity left, provenance right, note under both
   y += 78;
   ctx.strokeStyle = LINE; ctx.beginPath(); ctx.moveTo(PAD, y - 16); ctx.lineTo(W - PAD, y - 16); ctx.stroke();
   ctx.fillStyle = INK3; ctx.font = `500 10.5px ${BODY}`;
   const a = card.academy || {};
-  ctx.fillText(clip(ctx, [a.academy_name || 'MSR Sports Academy', a.phone].filter(Boolean).join('  ·  '), W - PAD * 2), PAD, y + 2);
-  if (a.address) ctx.fillText(clip(ctx, a.address, W - PAD * 2), PAD, y + 18);
+  const madeOn = `Generated on ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  const mw = ctx.measureText(madeOn).width;
+  ctx.fillText(clip(ctx, [a.academy_name || 'MSR Sports Academy', a.phone].filter(Boolean).join(', '), W - PAD * 2 - mw - 16), PAD, y + 2);
+  ctx.fillText(madeOn, W - PAD - mw, y + 2);
+  ctx.fillText(clip(ctx, [a.address, 'Computer-generated record, no signature needed.'].filter(Boolean).join('  '), W - PAD * 2), PAD, y + 18);
 
   return canvas;
 }

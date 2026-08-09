@@ -181,7 +181,11 @@ export default function Students() {
           <Field label="Batch">
             <select className="input" value={form.batch_id} onChange={e => setForm({ ...form, batch_id: e.target.value })}>
               <option value="">Select</option>
-              {meta.batches.map(b => <option key={b.id} value={b.id}>{b.name} ({b.start_time})</option>)}
+              {meta.batches.filter(b => b.active !== 0).map(b => (
+                <option key={b.id} value={b.id}>
+                  {b.name} ({b.start_time}, {b.student_count}/{b.capacity}{b.student_count >= b.capacity ? ', full' : ''})
+                </option>
+              ))}
             </select>
           </Field>
           <Field label="Height (cm)" hint="Needed for the PMT check">

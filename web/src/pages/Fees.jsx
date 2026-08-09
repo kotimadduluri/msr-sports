@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { api, rupees, shortDate, monthISO, todayISO, waLink } from '../api';
-import { Loading, Empty, Badge, Modal, Field, useToast, Stat, PageHead, Segmented, PrintArea } from '../components.jsx';
+import { Loading, Empty, Badge, Modal, Field, useToast, Stat, PageHead, Segmented, PrintArea, PrintDoc } from '../components.jsx';
 import { IconDownload, IconWhatsapp, IconRupee, IconPlus, IconCircleCheck } from '../icons.jsx';
 import { msg, MsgLang } from '../waTemplates.jsx';
 
@@ -17,26 +17,22 @@ const bucketOf = i => AGE_BUCKETS.find(b => ageDays(i.due_date) >= b.min);
 /* Rendered in the modal (preview) and again inside <PrintArea> for printing. */
 function ReceiptBody({ receipt }) {
   return (
-    <div className="rounded-xl border border-ink-300 p-5 text-sm">
-      <div className="text-center">
-        <p className="text-lg font-extrabold">{receipt.academy?.academy_name || 'MSR Sports Academy'}</p>
-        <p className="text-xs text-ink-500">{receipt.academy?.address}</p>
-        <p className="text-xs text-ink-500">{receipt.academy?.phone}</p>
-      </div>
-      <hr className="my-3" />
-      <div className="grid grid-cols-2 gap-2">
-        <p className="text-ink-500">Receipt no</p><p className="text-right font-mono">{receipt.receipt_no}</p>
-        <p className="text-ink-500">Date</p><p className="text-right">{shortDate(receipt.paid_on)}</p>
-        <p className="text-ink-500">Student</p><p className="text-right font-semibold">{receipt.student_name}</p>
-        <p className="text-ink-500">Admission no</p><p className="text-right font-mono">{receipt.admission_no}</p>
-        <p className="text-ink-500">Programme</p><p className="text-right">{receipt.course_name || '—'}</p>
-        <p className="text-ink-500">For</p><p className="text-right">{receipt.period || 'General'}</p>
-        <p className="text-ink-500">Mode</p><p className="text-right uppercase">{receipt.mode}</p>
-      </div>
-      <hr className="my-3" />
-      <div className="flex justify-between text-base font-bold">
-        <span>Amount paid</span><span>{rupees(receipt.amount)}</span>
-      </div>
+    <div className="rounded-xl border border-ink-300 p-5">
+      <PrintDoc academy={receipt.academy} title="Fee receipt">
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <p className="text-ink-500">Receipt no</p><p className="text-right font-mono">{receipt.receipt_no}</p>
+          <p className="text-ink-500">Date</p><p className="text-right">{shortDate(receipt.paid_on)}</p>
+          <p className="text-ink-500">Student</p><p className="text-right font-semibold">{receipt.student_name}</p>
+          <p className="text-ink-500">Admission no</p><p className="text-right font-mono">{receipt.admission_no}</p>
+          <p className="text-ink-500">Programme</p><p className="text-right">{receipt.course_name || 'General'}</p>
+          <p className="text-ink-500">For</p><p className="text-right">{receipt.period || 'General'}</p>
+          <p className="text-ink-500">Mode</p><p className="text-right uppercase">{receipt.mode}</p>
+        </div>
+        <hr className="my-3" />
+        <div className="flex justify-between text-base font-bold">
+          <span>Amount paid</span><span>{rupees(receipt.amount)}</span>
+        </div>
+      </PrintDoc>
     </div>
   );
 }

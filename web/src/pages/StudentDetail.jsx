@@ -28,6 +28,7 @@ export default function StudentDetail() {
   const [pay, setPay] = useState({ amount: '', mode: 'cash', invoice_id: '', reference: '' });
   const [test, setTest] = useState({ event: EVENTS[0], value: '', unit: 'sec', date: todayISO() });
   const [edit, setEdit] = useState({});
+  const [batchList, setBatchList] = useState([]);
 
   const load = useCallback(() => api.get(`/students/${id}`).then(setS).catch(e => toast(e.message, 'error')), [id, toast]);
   useEffect(() => { load(); }, [load]);
@@ -63,8 +64,9 @@ export default function StudentDetail() {
       status: s.status, leave_reason: s.leave_reason || '',
       availability_note: s.availability_note || '',
       fee_override: s.fee_override ?? '', target_exam: s.target_exam || '',
-      preferred_lang: s.preferred_lang || 'te'
+      preferred_lang: s.preferred_lang || 'te', batch_id: s.batch_id ?? ''
     });
+    if (!batchList.length) api.get('/batches').then(setBatchList).catch(() => {});
     setEditOpen(true);
   }
 
@@ -77,7 +79,8 @@ export default function StudentDetail() {
         availability_note: edit.availability_note || null,
         fee_override: edit.fee_override === '' ? null : Number(edit.fee_override),
         target_exam: edit.target_exam || null,
-        preferred_lang: edit.preferred_lang
+        preferred_lang: edit.preferred_lang,
+        batch_id: edit.batch_id ? Number(edit.batch_id) : null
       });
       toast('Saved');
       setEditOpen(false); load();
@@ -335,8 +338,19 @@ export default function StudentDetail() {
                 value={edit.leave_reason} onChange={e => setEdit({ ...edit, leave_reason: e.target.value })} />
             </Field>
           )}
+          <Field label="Batch">
+            <select className="input" value={edit.batch_id ?? ''}
+              onChange={e => setEdit({ ...edit, batch_id: e.target.value })}>
+              <option value="">No batch</option>
+              {batchList.filter(b => b.active !== 0 || b.id === s.batch_id).map(b => (
+                <option key={b.id} value={b.id}>
+                  {b.name} ({b.student_count}/{b.capacity}{b.student_count >= b.capacity ? ', full' : ''})
+                </option>
+              ))}
+            </select>
+          </Field>
           <Field label="Availability note (shows on roll call and test day)">
-            <input className="input" placeholder="Knee strain — no running this week"
+            <input className="input" placeholder="Knee strain, no running this week"
               value={edit.availability_note} onChange={e => setEdit({ ...edit, availability_note: e.target.value })} />
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">

@@ -75,7 +75,7 @@ const batchDefs = [
   ['Evening Ground (Police)', 0, '16:30', '19:00', 'MSR Ground, Chirala'],
   ['Evening Railway/SSC', 4, '17:00', '19:30', 'MSR Ground, Chirala'],
   ['Women’s Batch', 0, '06:30', '08:30', 'MSR Ground, Chirala'],
-  ['Written Class — Morning', 0, '09:00', '11:00', 'MSR Study Hall, Chirala'],
+  ['Morning Written Class', 0, '09:00', '11:00', 'MSR Study Hall, Chirala'],
   ['Fitness & Athletics (Evening)', 5, '17:30', '19:00', 'MSR Ground, Chirala']
 ];
 const mkBatch = db.prepare(`INSERT INTO batches (name, course_id, coach_id, days, start_time, end_time, venue, capacity)
@@ -182,7 +182,7 @@ if (db.prepare('SELECT COUNT(*) c FROM invoices').get().c === 0) {
         if (!course || !course.fee_amount) continue;
         if (st.join_date.slice(0, 7) > period) continue;
         if (st.status !== 'active' && back < 2) continue;
-        mkInv.run(st.id, period, `${course.name} fee — ${period}`, course.fee_amount, `${period}-10`, 'unpaid');
+        mkInv.run(st.id, period, `${course.name} fee for ${period}`, course.fee_amount, `${period}-10`, 'unpaid');
         const inv = db.prepare('SELECT id, amount FROM invoices WHERE student_id=? AND period=?').get(st.id, period);
         const roll = rnd();
         const payProb = back === 0 ? 0.55 : back === 1 ? 0.86 : 0.95;

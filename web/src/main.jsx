@@ -21,6 +21,7 @@ import StudentDetail from './pages/StudentDetail.jsx';
 import Attendance from './pages/Attendance.jsx';
 import Fees from './pages/Fees.jsx';
 import Batches from './pages/Batches.jsx';
+import BatchDetail from './pages/BatchDetail.jsx';
 import Enquiries from './pages/Enquiries.jsx';
 import Performance from './pages/Performance.jsx';
 import TestDay from './pages/TestDay.jsx';
@@ -54,6 +55,7 @@ createRoot(document.getElementById('root')).render(
               <Route path="attendance" element={<Attendance />} />
               <Route path="fees" element={<Fees />} />
               <Route path="batches" element={<Batches />} />
+              <Route path="batches/:id" element={<BatchDetail />} />
               <Route path="enquiries" element={<Enquiries />} />
               <Route path="performance" element={<Performance />} />
               <Route path="testday" element={<TestDay />} />

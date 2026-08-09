@@ -48,7 +48,7 @@ db.benchmarks = [
   { id: 10, exam: 'Indian Army GD', event: 'Pull-ups', gender: 'M', value: 10, unit: 'count' },
   { id: 11, exam: 'SSC GD Constable', event: '1600m Run', gender: 'M', value: 380, unit: 'sec' },
   { id: 12, exam: 'SSC GD Constable', event: '1600m Run', gender: 'F', value: 510, unit: 'sec' }
-].map(b => ({ ...b, note: 'Default target — verify against the current notification' }));
+].map(b => ({ ...b, note: 'Default target, verify against the current notification' }));
 
 db.expenses = [
   { id: 1, date: `${month}-01`, category: 'rent', description: 'Ground rent', amount: 8000 },
@@ -188,10 +188,25 @@ const GET = {
     return { total: rows.length, students: rows.slice(0, Number(limit)).map(decorate) };
   },
 
-  '/batches': () => db.batches.map(b => ({
-    ...b, course_name: courses[b.course_id]?.name || null,
-    student_count: db.students.filter(s => s.batch_id === b.id && s.status === 'active').length
-  })),
+  '/batches': () => db.batches.map(b => {
+    const roster = db.students.filter(s => s.batch_id === b.id && s.status === 'active');
+    const ids = new Set(roster.map(s => s.id));
+    const att = db.attendance.filter(a => ids.has(a.student_id));
+    const due = db.invoices
+      .filter(i => ids.has(i.student_id) && (i.status === 'unpaid' || i.status === 'partial'))
+      .reduce((sum, i) => {
+        const paid = db.payments.filter(p => p.invoice_id === i.id).reduce((a, p) => a + p.amount, 0);
+        return sum + (i.amount - paid);
+      }, 0);
+    return {
+      ...b, course_name: courses[b.course_id]?.name || null,
+      student_count: roster.length,
+      att30_pct: att.length ? Math.round(100 * att.filter(a => a.status === 'present' || a.status === 'late').length / att.length) : null,
+      due_total: Math.round(due)
+    };
+  }),
+
+  '/coaches': () => db.users.filter(u => u.role === 'coach' && u.active).map(u => ({ id: u.id, name: u.name })),
 
   '/courses': () => db.courses.map(c => ({
     ...c, student_count: db.students.filter(s => s.course_id === c.id && s.status === 'active').length
@@ -443,7 +458,7 @@ function post(path, body = {}) {
     for (const s of db.students.filter(x => x.status === 'active')) {
       const fee = courses[s.course_id]?.fee_amount;
       if (!fee || db.invoices.some(i => i.student_id === s.id && i.period === period)) continue;
-      db.invoices.push({ id: Date.now() + created, student_id: s.id, period, description: `${courses[s.course_id].name} fee — ${period}`, amount: fee, due_date: `${period}-10`, status: 'unpaid' });
+      db.invoices.push({ id: Date.now() + created, student_id: s.id, period, description: `${courses[s.course_id].name} fee for ${period}`, amount: fee, due_date: `${period}-10`, status: 'unpaid' });
       created++;
     }
     return { ok: true, period, created };
@@ -552,6 +567,15 @@ function patch(path, body = {}) {
       throw new Error('Add a short reason when moving a student out of active');
     }
     Object.assign(s, body);
+    return { ok: true };
+  }
+  if (path.startsWith('/batches/')) {
+    const b = db.batches.find(x => x.id === Number(path.split('/')[2]));
+    if (b) {
+      Object.assign(b, body);
+      b.coach_name = db.users.find(u => u.id === b.coach_id)?.name || null;
+      batches = byId(db.batches);
+    }
     return { ok: true };
   }
   return { ok: true };

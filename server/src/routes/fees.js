@@ -30,7 +30,7 @@ r.post('/generate', allow(...OFFICE), (req, res) => {
   let created = 0;
   db.transaction(() => {
     for (const s of students) {
-      const info = stmt.run(s.id, period, `${s.course_name} fee — ${period}`, s.fee_amount, due_date);
+      const info = stmt.run(s.id, period, `${s.course_name} fee for ${period}`, s.fee_amount, due_date);
       created += info.changes;
     }
   })();

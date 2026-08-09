@@ -33,14 +33,28 @@ r.patch('/courses/:id', auth, allow(...OFFICE), (req, res) => {
 });
 
 /* ---------------- Batches ---------------- */
+/* Each row carries its own health: active headcount, attendance over the
+   last 30 days, and the fee balance still out — so the owner's "which batch
+   is leaking?" question is answered on one screen. */
 r.get('/batches', auth, allow(...TRAINING), (_req, res) => {
   res.json(db.prepare(`
     SELECT b.*, c.name AS course_name, u.name AS coach_name,
-      (SELECT COUNT(*) FROM students s WHERE s.batch_id = b.id AND s.status='active') AS student_count
+      (SELECT COUNT(*) FROM students s WHERE s.batch_id = b.id AND s.status='active') AS student_count,
+      (SELECT ROUND(100.0 * SUM(CASE WHEN a.status IN ('present','late') THEN 1 ELSE 0 END) / COUNT(*))
+         FROM attendance a JOIN students sa ON sa.id = a.student_id
+         WHERE sa.batch_id = b.id AND a.date >= date('now','-30 day')) AS att30_pct,
+      (SELECT COALESCE(SUM(i.amount - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.invoice_id = i.id), 0)), 0)
+         FROM invoices i JOIN students si ON si.id = i.student_id
+         WHERE si.batch_id = b.id AND si.status = 'active' AND i.status IN ('unpaid','partial')) AS due_total
     FROM batches b
     LEFT JOIN courses c ON c.id = b.course_id
     LEFT JOIN users u ON u.id = b.coach_id
     ORDER BY b.active DESC, b.start_time`).all());
+});
+
+/* Coach names for the batch form — lighter than the admin-only users list. */
+r.get('/coaches', auth, allow(...TRAINING), (_req, res) => {
+  res.json(db.prepare(`SELECT id, name FROM users WHERE role = 'coach' AND active = 1 ORDER BY name`).all());
 });
 
 r.post('/batches', auth, allow(...OFFICE), (req, res) => {
