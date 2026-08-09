@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --surface: #ffffff;
+    --plane: #f7f7f5;
+    --hairline: rgb(15 28 54 / 0.08);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-ink-50 text-ink-800 antialiased;
+    font-feature-settings: 'cv05' 1, 'ss01' 1;
+    overscroll-behavior-y: none;
+  }
+
+  h1, h2, h3 { @apply tracking-[-0.02em]; }
+
+  /* one visible focus style everywhere, keyboard only */
+  :focus-visible {
+    @apply outline-none ring-2 ring-msr-500 ring-offset-2 ring-offset-white rounded-lg;
+  }
+
+  /* numbers that sit in columns must align */
+  table { font-variant-numeric: tabular-nums; }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { @apply rounded-full bg-ink-200; }
+  ::-webkit-scrollbar-track { background: transparent; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+}
+
+@layer components {
+  /* ---------- surfaces ---------- */
+  .card {
+    @apply rounded-2xl bg-white shadow-card;
+    box-shadow: 0 0 0 1px var(--hairline), 0 1px 2px rgb(15 28 54 / .05);
+  }
+  .card-hover { @apply transition duration-200 hover:shadow-lift; }
+
+  /* ---------- buttons: 44px min height for thumbs ---------- */
+  .btn {
+    @apply inline-flex min-h-[2.75rem] select-none items-center justify-center gap-2 rounded-xl px-4
+           text-sm font-semibold leading-none transition duration-150
+           active:scale-[.985] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-sm { @apply min-h-[2.25rem] rounded-lg px-3 text-[13px]; }
+  .btn-primary { @apply btn bg-msr-800 text-white shadow-card hover:bg-msr-900; }
+  .btn-accent  { @apply btn bg-saffron-400 text-msr-950 shadow-card hover:bg-saffron-300; }
+  .btn-ghost   { @apply btn bg-white text-ink-700 hover:bg-ink-50; box-shadow: 0 0 0 1px var(--hairline); }
+  .btn-quiet   { @apply btn bg-ink-100 text-ink-700 hover:bg-ink-200; }
+  .btn-danger  { @apply btn bg-critical text-white hover:brightness-95; }
+
+  /* ---------- forms ---------- */
+  .input {
+    @apply w-full rounded-xl border-0 bg-white px-3.5 py-3 text-[15px] text-ink-800
+           shadow-[inset_0_0_0_1px_var(--hairline)] outline-none transition
+           placeholder:text-ink-400
+           focus:shadow-[inset_0_0_0_1.5px_theme(colors.msr.500)] focus:ring-0;
+  }
+  select.input { @apply appearance-none bg-[length:1.1rem] bg-[right_0.75rem_center] bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236a6a62' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); }
+  .label { @apply mb-1.5 block text-2xs font-semibold uppercase tracking-wider text-ink-500; }
+
+  /* ---------- data display ---------- */
+  .pill { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-semibold; }
+  .th   { @apply whitespace-nowrap px-4 py-3 text-left text-2xs font-semibold uppercase tracking-wider text-ink-500; }
+  .td   { @apply px-4 py-3.5 text-sm; }
+  .row-hover { @apply transition-colors hover:bg-msr-50/60; }
+
+  /* segmented control */
+  .seg { @apply flex gap-1 rounded-xl bg-ink-100 p-1; }
+  .seg-item { @apply min-h-[2.25rem] flex-1 whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold text-ink-600 transition; }
+  .seg-item-on { @apply bg-white text-ink-900 shadow-card; }
+
+  .skeleton { @apply relative overflow-hidden rounded-lg bg-ink-100; }
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full animate-shimmer;
+    content: '';
+    background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / .65), transparent);
+  }
+
+  .hairline { box-shadow: 0 0 0 1px var(--hairline); }
+  .safe-bottom { padding-bottom: calc(var(--safe-b) + 0.5rem); }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .tnum { font-variant-numeric: tabular-nums; }
+}
+
+/* print only the receipt */
+@media print {
+  body * { visibility: hidden; }
+  #receipt, #receipt * { visibility: visible; }
+  #receipt { position: absolute; inset: 0; margin: 0; border: 0; padding: 24px; }
+}
