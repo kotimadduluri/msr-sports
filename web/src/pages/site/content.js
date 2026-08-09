@@ -4,12 +4,14 @@ import {
   IconSunrise, IconBook, IconSunset, IconCircleCheck
 } from '../../icons.jsx';
 
-/* Replace with the academy's real details before going live (CLAUDE.md §9).
+/* Testing numbers supplied by the owner (Aug 2026) — every call/WhatsApp
+   button reaches them while the site is under review. Swap in the office
+   contact details before public launch (CLAUDE.md §9).
    `phone` is for display; `phoneHref` is what tel: actually dials. */
 export const ACADEMY = {
-  phone: '+91 90000 00000',
-  phoneHref: '+919000000000',
-  whatsapp: '919000000000',
+  phone: '+91 81790 28750',
+  phoneHref: '+918179028750',
+  whatsapp: '918179028750',
   email: 'info@msrsports.in',
   address: 'MSR Ground, Chirala, Bapatla District, Andhra Pradesh 523155',
   mapsUrl: 'https://www.google.com/maps/search/?api=1&query=MSR+Ground+Chirala+Bapatla+District+Andhra+Pradesh'

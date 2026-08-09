@@ -77,6 +77,16 @@ db.sessions = [];
 const injured = db.students.find(s => s.status === 'active' && s.batch_id === db.batches[0].id);
 if (injured) injured.availability_note = 'Knee strain — no running this week';
 
+/* Owner's testing numbers: every call/WhatsApp action in the demo reaches
+   these two phones instead of the snapshot's fake numbers — safe to tap. */
+const TEST_PHONES = ['8179028750', '9247838306'];
+db.students.forEach((s, i) => {
+  s.phone = TEST_PHONES[i % 2];
+  s.guardian_phone = TEST_PHONES[(i + 1) % 2];
+});
+db.enquiries.forEach((e, i) => { e.phone = TEST_PHONES[i % 2]; });
+db.academy.phone = '+91 81790 28750';
+
 /* --- cut-off arithmetic (mirror of server/src/readiness.js) --- */
 const meets = (v, t, u) => u === 'sec' ? v <= t : v >= t;
 const readyStatus = (v, t, u) => meets(v, t, u) ? 'ready' : (u === 'sec' ? v <= t * 1.1 : v >= t * 0.9) ? 'borderline' : 'at-risk';

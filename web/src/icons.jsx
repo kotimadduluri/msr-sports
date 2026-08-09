@@ -3,7 +3,7 @@ import {
   Activity, ArrowRight, BookOpen, Calendar, CalendarCheck, ChevronLeft,
   ChevronRight, CircleCheck, ClipboardCheck, Clock, Download, Dumbbell,
   Globe, Inbox, IndianRupee, LayoutDashboard, LogOut, Mail, MapPin, Medal, Menu,
-  MessageCircle, MessageSquare, Navigation, Phone, Plus, Ruler, Search,
+  MessageCircle, MessageSquare, Navigation, Phone, Plus, Ruler, Search, Share2,
   Settings, Shield, ShieldCheck, Sparkles, Sunrise, Sunset, Target, Timer,
   TrainFront, TrendingUp, TriangleAlert, Trophy, User, Users, Wallet, X
 } from 'lucide-react';
@@ -60,6 +60,7 @@ export const IconUser = wrap(User);
 export const IconMessage = wrap(MessageSquare);
 export const IconGlobe = wrap(Globe);
 export const IconWallet = wrap(Wallet);
+export const IconShare = wrap(Share2);
 export const IconDirections = wrap(Navigation);
 
 /* the mark — a crest with the MSR monogram, gold star and track lines.

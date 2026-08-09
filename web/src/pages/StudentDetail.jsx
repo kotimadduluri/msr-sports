@@ -3,71 +3,15 @@ import { useParams, Link } from 'react-router-dom';
 import { api, rupees, shortDate, secsToTime, waLink, todayISO, monthISO } from '../api';
 import { Loading, Badge, Modal, Field, Stat, useToast, Segmented, PrintArea } from '../components.jsx';
 import { HeatStrip } from '../charts.jsx';
-import { IconChevronLeft, IconPhone, IconWhatsapp, IconRupee, IconPlus, IconSpark, IconSettings } from '../icons.jsx';
+import { IconChevronLeft, IconPhone, IconWhatsapp, IconRupee, IconPlus, IconSpark, IconSettings, IconShare } from '../icons.jsx';
 import { EVENTS, unitFor, READINESS } from '../events.js';
 import { msg, MsgLang } from '../waTemplates.jsx';
+import { buildProgressCard, shareProgressCard } from '../progressCard.js';
 
 const STATUSES = ['active', 'on-hold', 'dropped', 'passed-out'];
 
 const fmtVal = (value, unit) => unit === 'sec' ? secsToTime(value) : unit === 'm' ? `${value} m` : value;
 const fmtTarget = t => t.unit === 'sec' ? `≤ ${secsToTime(t.target)}` : `≥ ${t.target} ${t.unit === 'count' ? '' : t.unit}`;
-
-/* The card itself — rendered once in the modal (preview) and once inside
-   <PrintArea> so printing gets the complete card free of the modal. */
-function ProgressCardBody({ card }) {
-  return (
-    <div className="rounded-xl border border-ink-300 p-5 text-sm">
-      <div className="text-center">
-        <p className="text-lg font-extrabold">{card.academy?.academy_name || 'MSR Sports Academy'}</p>
-        <p className="text-xs text-ink-500">Monthly progress — {card.month}</p>
-      </div>
-      <hr className="my-3" />
-      <div className="grid grid-cols-2 gap-2">
-        <p className="text-ink-500">Student</p><p className="text-right font-semibold">{card.student.name}</p>
-        <p className="text-ink-500">Admission no</p><p className="text-right font-mono">{card.student.admission_no}</p>
-        <p className="text-ink-500">Programme</p><p className="text-right">{card.student.course_name || '—'}</p>
-        <p className="text-ink-500">Attendance</p>
-        <p className="text-right font-semibold">
-          {card.attendance.pct === null ? '—' : `${card.attendance.pct}%`} ({card.attendance.present}/{card.attendance.total})
-        </p>
-      </div>
-      {card.events.length > 0 && (
-        <>
-          <hr className="my-3" />
-          <div className="space-y-2">
-            {card.events.map(e => {
-              const t = e.targets[0];
-              const improved = e.delta !== null && (e.unit === 'sec' ? e.delta < 0 : e.delta > 0);
-              return (
-                <div key={e.event} className="flex items-center justify-between gap-2">
-                  <div>
-                    <p className="font-semibold">{e.event}</p>
-                    <p className="text-xs text-ink-500">
-                      {t ? `target ${fmtTarget(t)} · ${t.exam}` : 'no cut-off set'}
-                      {e.delta !== null && (
-                        <span className={improved ? ' text-good' : ' text-ink-500'}>
-                          {' '}· {improved ? 'improved' : 'changed'} {Math.abs(e.delta)}{e.unit === 'sec' ? 's' : ` ${e.unit}`}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {t && <span className={`rounded-lg px-2 py-0.5 text-2xs font-bold ${READINESS[t.status].cls}`}>{READINESS[t.status].label}</span>}
-                    <p className="font-bold tabular-nums">{fmtVal(e.value, e.unit)}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-      <hr className="my-3" />
-      <div className="flex justify-between text-base font-bold">
-        <span>Fee balance</span><span>{card.balance > 0 ? rupees(card.balance) : 'All clear'}</span>
-      </div>
-    </div>
-  );
-}
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -80,6 +24,7 @@ export default function StudentDetail() {
   const [editOpen, setEditOpen] = useState(false);
   const [cardOpen, setCardOpen] = useState(false);
   const [card, setCard] = useState(null);
+  const [built, setBuilt] = useState(null);   // { dataUrl, blob, filename } from progressCard.js
   const [pay, setPay] = useState({ amount: '', mode: 'cash', invoice_id: '', reference: '' });
   const [test, setTest] = useState({ event: EVENTS[0], value: '', unit: 'sec', date: todayISO() });
   const [edit, setEdit] = useState({});
@@ -140,9 +85,18 @@ export default function StudentDetail() {
   }
 
   async function openCard() {
-    setCard(null); setCardOpen(true);
-    try { setCard(await api.get(`/students/${s.id}/progress-card?month=${monthISO()}`)); }
-    catch (err) { toast(err.message, 'error'); setCardOpen(false); }
+    setCard(null); setBuilt(null); setCardOpen(true);
+    try {
+      const data = await api.get(`/students/${s.id}/progress-card?month=${monthISO()}`);
+      setCard(data);
+      setBuilt(await buildProgressCard(data));   // canvas → preview image + real PDF
+    } catch (err) { toast(err.message, 'error'); setCardOpen(false); }
+  }
+
+  async function sharePdf() {
+    if (!built) return;
+    const how = await shareProgressCard(built);
+    if (how === 'downloaded') toast('PDF saved — attach it on WhatsApp or anywhere');
   }
 
   const reminder = () => msg('feeReminder', s, s.balance, null, upi);
@@ -400,23 +354,32 @@ export default function StudentDetail() {
       </Modal>
 
       <Modal open={cardOpen} onClose={() => setCardOpen(false)} title="Monthly progress card">
-        {!card ? <Loading rows={5} /> : (
+        {!card || !built ? <Loading rows={6} /> : (
           <div className="space-y-3">
-            <ProgressCardBody card={card} />
-            <div className="flex items-center justify-between gap-2">
+            <img src={built.dataUrl} alt={`Progress card for ${card.student.name}`}
+              className="w-full rounded-xl border border-ink-200 shadow-card" />
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <MsgLang />
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <a className="btn-ghost" target="_blank" rel="noreferrer"
                   href={waLink(card.student.guardian_phone || card.student.phone, msg('progressCard', card))}>
-                  <IconWhatsapp className="h-[18px] w-[18px] text-emerald-600" /> WhatsApp
+                  <IconWhatsapp className="h-[18px] w-[18px] text-emerald-600" /> Message
                 </a>
-                <button onClick={() => window.print()} className="btn-primary">Print</button>
+                <button onClick={() => window.print()} className="btn-ghost">Print</button>
+                <button onClick={sharePdf} className="btn-accent">
+                  <IconShare className="h-[18px] w-[18px]" /> Share PDF
+                </button>
               </div>
             </div>
+            <p className="text-center text-xs text-ink-500">
+              Share PDF opens your phone's share sheet — send the card to WhatsApp, or anywhere else.
+            </p>
           </div>
         )}
       </Modal>
-      {cardOpen && card && <PrintArea><ProgressCardBody card={card} /></PrintArea>}
+      {cardOpen && built && (
+        <PrintArea><img src={built.dataUrl} alt="" style={{ width: '100%' }} /></PrintArea>
+      )}
     </div>
   );
 }
