@@ -1,73 +1,161 @@
-import React from 'react';
+import React, { useId, useState } from 'react';
 import { Reveal, CountUp, Marquee } from '../../motion.jsx';
 import { IconPin, IconPhone, IconTimer, IconCheck } from '../../icons.jsx';
 import ScrollLink from './ScrollLink.jsx';
 import { Lanes } from './Decor.jsx';
 import { ACADEMY, PROOF, EVENTS } from './content.js';
 
-/* One athlete, drawn as a two-frame run cycle. Frame B plays the same stride
-   animation delayed half a period, so the frames alternate; under reduced
-   motion frame B is hidden and frame A stops on a clean pose. */
-function Runner({ x, y, scale, color }) {
-  const limb = { fill: 'none', stroke: color, strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' };
+/* ---------------------------------------------------------------- athletes
+   Pictogram athletes built from thick round-capped strokes, animated as a
+   skeleton: thighs and upper arms rotate at the hip/shoulder, shins at the
+   knee, all on eased SMIL curves that stay in sync on the document timeline.
+   Far-side limbs are drawn in a darker tone for depth. When the visitor
+   prefers reduced motion we skip the <animateTransform> nodes entirely and
+   the figures hold the static mid-stride pose. */
+
+const T = 0.66; // seconds per full stride cycle
+
+const EASE2 = { calcMode: 'spline', keySplines: '.42 0 .58 1;.42 0 .58 1', repeatCount: 'indefinite' };
+const EASE4 = { calcMode: 'spline', keySplines: '.42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1', repeatCount: 'indefinite' };
+
+function Swing({ on, values, keyTimes = '0;.5;1', begin, ease = EASE2 }) {
+  if (!on) return null;
   return (
-    <g transform={`translate(${x} ${y}) scale(${scale})`}>
-      <g className="animate-bob">
-        {/* frame A — full stride */}
-        <g className="animate-stride motion-reduce:animate-none">
-          <circle cx="4" cy="-34" r="4.4" fill={color} />
-          <path d="M5 -29 L-2 -14" {...limb} />
-          <path d="M3 -26 L11 -21 L16 -27" {...limb} />
-          <path d="M3 -25 L-5 -21 L-9 -13" {...limb} />
-          <path d="M-2 -14 L7 -8 L11 0" {...limb} />
-          <path d="M-2 -14 L-10 -7 L-17 -11" {...limb} />
-        </g>
-        {/* frame B — legs passing */}
-        <g className="animate-stride motion-reduce:hidden" style={{ animationDelay: '-.23s' }}>
-          <circle cx="4" cy="-35" r="4.4" fill={color} />
-          <path d="M5 -30 L-2 -14" {...limb} />
-          <path d="M3 -26 L9 -20 L13 -25" {...limb} />
-          <path d="M3 -25 L-3 -19 L-6 -13" {...limb} />
-          <path d="M-2 -14 L5 -8 L3 0" {...limb} />
-          <path d="M-2 -14 L-5 -6 L-10 -2" {...limb} />
-        </g>
+    <animateTransform attributeName="transform" type="rotate" additive="sum"
+      values={values} keyTimes={keyTimes} dur={`${T}s`} begin={begin} {...ease} />
+  );
+}
+
+/* One leg: thigh from the hip, shin+foot from the knee. `phase` staggers the
+   two legs half a cycle apart. `pose` is the frozen fallback angle pair. */
+function Leg({ on, tone, w, begin, pose: [hipDeg, kneeDeg] }) {
+  const s = { fill: 'none', stroke: tone, strokeWidth: w, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  return (
+    <g transform={`rotate(${on ? 0 : hipDeg})`}>
+      <Swing on={on} values="-52 0 0; 44 0 0; -52 0 0" begin={begin} />
+      <path d="M0 0 L0 13.5" {...s} />
+      <g transform={`translate(0 13.5) rotate(${on ? 0 : kneeDeg})`}>
+        <Swing on={on} values="78 0 0; 26 0 0; 12 0 0; 108 0 0; 78 0 0" keyTimes="0;.28;.52;.8;1" ease={EASE4} begin={begin} />
+        <path d="M0 0 L0 12 M0 12 L4.6 12.5" {...s} />
       </g>
     </g>
   );
 }
 
-/* Side view of the track: three athletes mid-sprint, lane markings streaming
-   past under their feet, wind streaks behind them. Everything is CSS-animated,
-   so prefers-reduced-motion freezes it into a still illustration. */
+/* One arm: pumps from the shoulder, elbow held bent like a sprinter. */
+function Arm({ on, tone, w, begin, pose }) {
+  const s = { fill: 'none', stroke: tone, strokeWidth: w, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  return (
+    <g transform={`rotate(${on ? 0 : pose})`}>
+      <Swing on={on} values="40 0 0; -36 0 0; 40 0 0" begin={begin} />
+      <path d="M0 0 L0 10.5 M0 10.5 L7.6 8.2" {...s} />
+    </g>
+  );
+}
+
+function Athlete({ x, y, scale, tone, toneBack, phase = 0, drift, on }) {
+  const t0 = `-${(phase).toFixed(2)}s`;
+  const t1 = `-${(phase + T / 2).toFixed(2)}s`;
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      {/* contact shadow */}
+      <ellipse cx="1" cy="1.5" rx="13" ry="2.6" fill="#000" opacity=".3">
+        {on && <animate attributeName="rx" values="13;9.5;13" dur={`${T / 2}s`} begin={t0} repeatCount="indefinite" />}
+        {on && <animate attributeName="opacity" values=".3;.18;.3" dur={`${T / 2}s`} begin={t0} repeatCount="indefinite" />}
+      </ellipse>
+
+      <g>
+        {/* the whole body rides a small bounce, one per footstrike */}
+        {on && (
+          <animateTransform attributeName="transform" type="translate" additive="sum"
+            values="0 0; 0 -2.6; 0 0" keyTimes="0;.5;1" dur={`${T / 2}s`} begin={t0} {...EASE2} />
+        )}
+        {/* drift forward and back inside the pack */}
+        {on && drift && (
+          <animateTransform attributeName="transform" type="translate" additive="sum"
+            values="0 0; 7 0; 0 0; -6 0; 0 0" keyTimes="0;.25;.5;.75;1" dur={`${drift}s`}
+            calcMode="spline" keySplines=".42 0 .58 1;.42 0 .58 1;.42 0 .58 1;.42 0 .58 1" repeatCount="indefinite" />
+        )}
+
+        {/* far side, darker */}
+        <g transform="translate(4.5 -31)"><Arm on={on} tone={toneBack} w={5} begin={t0} pose={34} /></g>
+        <g transform="translate(0 -16.5)"><Leg on={on} tone={toneBack} w={5.4} begin={t1} pose={[38, 62]} /></g>
+
+        {/* torso + head */}
+        <path d="M0 -16.5 L4.5 -31" fill="none" stroke={tone} strokeWidth="8" strokeLinecap="round" />
+        <circle cx="7.6" cy="-37" r="4.6" fill={tone} />
+
+        {/* near side, full tone */}
+        <g transform="translate(0 -16.5)"><Leg on={on} tone={tone} w={5.4} begin={t0} pose={[-44, 42]} /></g>
+        <g transform="translate(4.5 -31)"><Arm on={on} tone={tone} w={5} begin={t1} pose={-32} /></g>
+      </g>
+    </g>
+  );
+}
+
+/* ------------------------------------------------------------------ scene */
 function RunScene() {
-  const dash = { stroke: '#fff', strokeOpacity: 0.16, strokeWidth: 2, strokeDasharray: '26 18' };
+  const uid = useId();
+  const [on] = useState(() => typeof window === 'undefined'
+    || !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const dash = { stroke: '#fff', strokeOpacity: 0.15, strokeWidth: 2, strokeDasharray: '26 18' };
+  const crowd = Array.from({ length: 53 }, (_, i) => i);
+
   return (
     <div className="relative mx-auto w-full max-w-md select-none">
-      <svg viewBox="0 0 420 260" className="w-full" aria-hidden="true">
-        {/* stadium wall */}
-        <rect x="0" y="64" width="420" height="56" fill="#13234a" />
-        <text x="210" y="103" textAnchor="middle" fill="#2a4c93" fillOpacity=".9"
-          fontFamily="Barlow Condensed, Arial Narrow, sans-serif" fontWeight="700" fontSize="27" letterSpacing="6">
+      <svg viewBox="0 40 420 220" className="w-full" aria-hidden="true">
+        <defs>
+          <linearGradient id={`${uid}-track`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#20396e" />
+            <stop offset=".25" stopColor="#1b3059" />
+            <stop offset="1" stopColor="#16264a" />
+          </linearGradient>
+          <radialGradient id={`${uid}-glow`}>
+            <stop offset="0" stopColor="#f5a524" stopOpacity=".22" />
+            <stop offset="1" stopColor="#f5a524" stopOpacity="0" />
+          </radialGradient>
+        </defs>
+
+        {/* stands with a drifting crowd */}
+        <rect x="0" y="42" width="420" height="46" fill="#0d1a33" />
+        <g opacity=".85">
+          {on && (
+            <animateTransform attributeName="transform" type="translate"
+              values="0 0; -54 0" dur="6.5s" repeatCount="indefinite" />
+          )}
+          {crowd.map(i => (
+            <g key={i}>
+              <circle cx={i * 9} cy={i % 2 ? 58 : 61} r="2" fill="#3a62b0" opacity={[.9, .45, .7][i % 3]} />
+              <circle cx={i * 9 + 4} cy={i % 2 ? 72 : 75} r="2" fill="#2a4c93" opacity={[.6, .9, .4][i % 3]} />
+            </g>
+          ))}
+        </g>
+
+        {/* boundary wall with signage */}
+        <rect x="0" y="88" width="420" height="38" fill="#13234a" />
+        <text x="210" y="114" textAnchor="middle" fill="#2f54a0" fillOpacity=".95"
+          fontFamily="Barlow Condensed, Arial Narrow, sans-serif" fontWeight="700" fontSize="22" letterSpacing="7">
           MSR SPORTS ACADEMY
         </text>
-        <path d="M0 120 H420" stroke="#f5a524" strokeOpacity=".5" strokeWidth="2.5" />
+        <path d="M0 126 H420" stroke="#f5a524" strokeOpacity=".55" strokeWidth="2.5" />
 
-        {/* track surface + streaming lane lines */}
-        <rect x="0" y="120" width="420" height="140" fill="#182b50" />
-        <path d="M0 150 H420" className="animate-ground" {...dash} />
-        <path d="M0 190 H420" className="animate-ground" {...dash} style={{ animationDelay: '-.3s' }} />
-        <path d="M0 240 H420" className="animate-ground" {...dash} style={{ animationDelay: '-.6s' }} />
+        {/* the track, hazier in the distance, faster up close */}
+        <rect x="0" y="126" width="420" height="134" fill={`url(#${uid}-track)`} />
+        <path d="M0 158 H420" className="animate-ground" style={{ animationDuration: '1.2s' }} {...dash} strokeOpacity=".1" />
+        <path d="M0 200 H420" className="animate-ground" style={{ animationDuration: '.8s', animationDelay: '-.3s' }} {...dash} />
+        <path d="M0 248 H420" className="animate-ground" style={{ animationDuration: '.55s', animationDelay: '-.6s' }} {...dash} strokeOpacity=".2" />
 
         {/* wind streaks */}
-        {[[132, '-.2s'], [172, '-1.1s'], [216, '-1.7s']].map(([y, d]) => (
-          <path key={y} d={`M340 ${y} h26`} stroke="#fff" strokeOpacity=".5" strokeWidth="2"
+        {[[140, '-.2s'], [184, '-1.1s'], [228, '-1.7s']].map(([y, d]) => (
+          <path key={y} d={`M340 ${y} h26`} stroke="#fff" strokeOpacity=".45" strokeWidth="2"
             strokeLinecap="round" className="animate-streak motion-reduce:hidden" style={{ animationDelay: d }} />
         ))}
 
         {/* the field — nearest athlete leads in saffron */}
-        <Runner x={110} y={146} scale={0.5} color="#8dabdd" />
-        <Runner x={200} y={186} scale={0.68} color="#dbe6f6" />
-        <Runner x={282} y={234} scale={0.88} color="#f5a524" />
+        <circle cx="288" cy="216" r="62" fill={`url(#${uid}-glow)`} />
+        <g opacity=".75"><Athlete x={112} y={152} scale={0.5} tone="#8dabdd" toneBack="#5f7cab" phase={0.11} on={on} /></g>
+        <Athlete x={198} y={196} scale={0.68} tone="#dbe6f6" toneBack="#93a8cd" phase={0.42} drift={5.2} on={on} />
+        <Athlete x={288} y={242} scale={0.9} tone="#f5a524" toneBack="#b97b16" phase={0.02} drift={4.1} on={on} />
       </svg>
 
       {/* floating proof cards — real screens from the admin app */}
@@ -105,7 +193,7 @@ export default function Hero() {
           </Reveal>
           <Reveal delay={80}>
             <h1 className="mt-5 max-w-xl font-display text-5xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-[4.25rem]">
-              Your government job starts at <span className="text-saffron-400">5:30{' '}AM.</span>
+              Your government job starts at <span className="text-saffron-400">5:30 AM.</span>
             </h1>
           </Reveal>
           <Reveal delay={160}>
