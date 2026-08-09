@@ -33,7 +33,7 @@ export default function Login() {
 
       <div className="relative w-full max-w-sm">
         <div className="mb-7 text-center">
-          <Logo className="mx-auto h-16 w-16 shadow-pop" />
+          <Logo className="mx-auto h-16 w-16" />
           <h1 className="mt-4 text-2xl font-extrabold text-white">MSR Sports Academy</h1>
           <p className="mt-1 text-sm text-msr-200">Chirala · Andhra Pradesh</p>
         </div>

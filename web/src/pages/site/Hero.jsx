@@ -72,7 +72,7 @@ export default function Hero() {
           <Reveal delay={240}>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a href="#join" className="btn-accent">Book a free trial morning</a>
-              <a href={`tel:${ACADEMY.phone}`} className="btn border border-white/25 text-white hover:bg-white/10">
+              <a href={`tel:${ACADEMY.phoneHref}`} className="btn border border-white/25 text-white hover:bg-white/10">
                 <IconPhone className="h-[18px] w-[18px]" /> {ACADEMY.phone}
               </a>
             </div>

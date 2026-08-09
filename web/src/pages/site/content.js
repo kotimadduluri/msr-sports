@@ -4,12 +4,15 @@ import {
   IconSunrise, IconBook, IconSunset, IconCircleCheck
 } from '../../icons.jsx';
 
-/* Replace with the academy's real details before going live (CLAUDE.md §9). */
+/* Replace with the academy's real details before going live (CLAUDE.md §9).
+   `phone` is for display; `phoneHref` is what tel: actually dials. */
 export const ACADEMY = {
   phone: '+91 90000 00000',
+  phoneHref: '+919000000000',
   whatsapp: '919000000000',
   email: 'info@msrsports.in',
-  address: 'MSR Ground, Chirala, Bapatla District, Andhra Pradesh 523155'
+  address: 'MSR Ground, Chirala, Bapatla District, Andhra Pradesh 523155',
+  mapsUrl: 'https://www.google.com/maps/search/?api=1&query=MSR+Ground+Chirala+Bapatla+District+Andhra+Pradesh'
 };
 
 export const PROOF = [

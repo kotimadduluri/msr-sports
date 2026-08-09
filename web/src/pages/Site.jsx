@@ -75,7 +75,7 @@ export default function Site() {
       {/* sticky call bar on phones */}
       <div className="sticky bottom-0 z-30 flex gap-2 border-t border-ink-200 bg-white/95 p-3 backdrop-blur-md md:hidden"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}>
-        <a href={`tel:${ACADEMY.phone}`} className="btn-ghost flex-1"><IconPhone className="h-[18px] w-[18px]" /> Call</a>
+        <a href={`tel:${ACADEMY.phoneHref}`} className="btn-ghost flex-1"><IconPhone className="h-[18px] w-[18px]" /> Call</a>
         <a href="#join" className="btn-primary flex-1">Join now</a>
       </div>
     </div>

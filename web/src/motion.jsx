@@ -9,7 +9,7 @@ const reduced = () =>
   typeof window !== 'undefined' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function useInView({ threshold = 0.2, once = true } = {}) {
+export function useInView({ threshold = 0.15, once = true } = {}) {
   const ref = useRef(null);
   const [inView, setInView] = useState(false);
   useEffect(() => {
