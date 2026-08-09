@@ -74,10 +74,13 @@ server/
 web/
   src/api.js           API client, demo switch, ₹/date formatting helpers
   src/mockApi.js       in-memory backend for the demo build (see §6)
-  src/icons.jsx        the icon set + logo
+  src/icons.jsx        the icon set (official Lucide via lucide-react) + logo
   src/components.jsx   Toast, Loading, Empty, Stat, Badge, Segmented, Modal, Field, PageHead
   src/charts.jsx       TrendLine, Columns, Spark, HeatStrip
-  src/pages/           Site (public), Login, Layout, and one file per admin screen
+  src/motion.jsx       Reveal (scroll-reveal), CountUp, Marquee, useInView
+  src/pages/           Login, Layout, and one file per admin screen
+  src/pages/Site.jsx   public website shell (header/footer/composition)
+  src/pages/site/      website sections: Hero, Sections, Join + content.js (all copy)
 ```
 
 ---
@@ -119,8 +122,16 @@ Follow these; they are why the UI looks like one product.
 - **Components before markup.** Reach for `PageHead`, `Stat`, `Badge`,
   `Segmented`, `Modal`, `Field`, `Loading`, `Empty` rather than hand-rolling.
   New page = `PageHead` + `Segmented` (if tabbed) + cards.
-- **Icons** are inline SVG in `icons.jsx`, one stroke weight, 24px grid.
-  No emoji in the UI.
+- **Icons come only from lucide.dev.** `icons.jsx` re-exports official Lucide
+  icons from `lucide-react` through one `wrap()` helper (stroke 1.75, default
+  size). Pages import from `icons.jsx`, never from `lucide-react` directly;
+  the only non-Lucide SVG is the `Logo` mark. No emoji in the UI.
+- **Motion** — use the primitives in `motion.jsx` (`Reveal` with `delay` for
+  stagger, `CountUp`, `Marquee`) plus the `float`/`marquee`/`lap` keyframes in
+  `tailwind.config.js`. Everything must respect `prefers-reduced-motion`; the
+  global rule in `index.css` collapses CSS transitions and `CountUp` checks the
+  media query itself. Website copy lives in `pages/site/content.js`, not inline
+  in components.
 - **Touch** — `.btn` is min 44px tall. Keep it. This app is used outdoors at
   5:30 AM on a phone.
 - **Loading** — skeletons (`<Loading rows={n} />`), not spinners.

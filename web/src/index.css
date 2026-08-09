@@ -99,6 +99,11 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .tnum { font-variant-numeric: tabular-nums; }
+
+  /* scroll-reveal: <Reveal> toggles .is-in when the element enters the viewport.
+     The global prefers-reduced-motion rule collapses the transition to nothing. */
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1); }
+  .reveal.is-in { opacity: 1; transform: none; }
 }
 
 /* print only the receipt */

@@ -42,11 +42,17 @@ export default {
       },
       keyframes: {
         'fade-up': { '0%': { opacity: 0, transform: 'translateY(6px)' }, '100%': { opacity: 1, transform: 'none' } },
-        shimmer: { '100%': { transform: 'translateX(100%)' } }
+        shimmer: { '100%': { transform: 'translateX(100%)' } },
+        float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-8px)' } },
+        marquee: { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } },
+        lap: { '0%': { strokeDashoffset: 0 }, '100%': { strokeDashoffset: -1320 } }
       },
       animation: {
         'fade-up': 'fade-up .28s cubic-bezier(.22,1,.36,1) both',
-        shimmer: 'shimmer 1.6s infinite'
+        shimmer: 'shimmer 1.6s infinite',
+        float: 'float 6s ease-in-out infinite',
+        marquee: 'marquee 30s linear infinite',
+        lap: 'lap 10s linear infinite'
       }
     }
   },
