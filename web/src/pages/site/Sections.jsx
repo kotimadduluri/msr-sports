@@ -2,12 +2,15 @@ import React from 'react';
 import { rupees } from '../../api';
 import { Reveal } from '../../motion.jsx';
 import { IconChevronRight } from '../../icons.jsx';
+import ScrollLink from './ScrollLink.jsx';
 import { WHY, TIMINGS, STEPS, programmeIcon } from './content.js';
 
 function SectionHead({ kicker, title, sub, light = false }) {
   return (
     <Reveal className="max-w-2xl">
-      <p className="text-2xs font-bold uppercase tracking-widest text-saffron-600">{kicker}</p>
+      <p className="flex items-center gap-2.5 text-2xs font-bold uppercase tracking-widest text-saffron-600">
+        <span className="h-px w-6 bg-saffron-500" aria-hidden="true" /> {kicker}
+      </p>
       <h2 className={`mt-2 text-3xl font-extrabold sm:text-4xl ${light ? 'text-white' : 'text-ink-900'}`}>{title}</h2>
       {sub && <p className={`mt-3 leading-relaxed ${light ? 'text-msr-100' : 'text-ink-600'}`}>{sub}</p>}
     </Reveal>
@@ -32,9 +35,9 @@ export function Programmes({ list }) {
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-600">{c.description}</p>
                 <div className="mt-5 flex items-center justify-between border-t border-ink-100 pt-4">
                   <p className="font-bold text-ink-900">{rupees(c.fee_amount)}<span className="text-sm font-medium text-ink-500">/month</span></p>
-                  <a href="#join" className="flex items-center gap-0.5 text-sm font-semibold text-msr-700 hover:text-msr-900">
+                  <ScrollLink to="join" className="flex items-center gap-0.5 text-sm font-semibold text-msr-700 hover:text-msr-900">
                     Enquire <IconChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                  </a>
+                  </ScrollLink>
                 </div>
               </article>
             </Reveal>
@@ -48,16 +51,28 @@ export function Programmes({ list }) {
 export function WhyMsr() {
   return (
     <section id="why" className="scroll-mt-20 bg-ink-50 py-16 md:py-20">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <SectionHead kicker="The difference" title="Why students choose MSR"
-          sub="Chirala has gyms and it has tuition centres. What it did not have is one place that treats the run and the written paper as a single preparation." />
-        <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1.45fr] lg:gap-16">
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <SectionHead kicker="The difference" title="Why students choose MSR"
+            sub="Chirala has gyms and it has tuition centres. What it did not have is one place that treats the run and the written paper as a single preparation." />
+          <Reveal delay={120} className="card mt-8 hidden p-5 lg:block">
+            <p className="font-bold text-ink-900">See it for yourself</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-600">
+              Walk in any morning from 5:30 and watch a full session before you decide anything.
+            </p>
+            <ScrollLink to="join" className="btn-primary btn-sm mt-4">Plan a visit</ScrollLink>
+          </Reveal>
+        </div>
+
+        <div>
           {WHY.map(([t, d], i) => (
-            <Reveal key={t} delay={(i % 3) * 80}>
-              <div className="card h-full p-5">
-                <span className="text-2xs font-bold tabular-nums text-saffron-500">0{i + 1}</span>
-                <h3 className="mt-2 font-bold text-ink-900">{t}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink-600">{d}</p>
+            <Reveal key={t} delay={(i % 2) * 60}>
+              <div className="flex gap-5 border-b border-ink-200/70 py-5 first:pt-0 last:border-0 last:pb-0">
+                <span className="pt-0.5 text-lg font-extrabold tabular-nums text-saffron-500">0{i + 1}</span>
+                <div>
+                  <h3 className="font-bold text-ink-900">{t}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{d}</p>
+                </div>
               </div>
             </Reveal>
           ))}

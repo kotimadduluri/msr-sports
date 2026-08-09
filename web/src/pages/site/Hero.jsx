@@ -1,6 +1,8 @@
 import React from 'react';
 import { Reveal, CountUp, Marquee } from '../../motion.jsx';
 import { IconPin, IconPhone, IconTimer, IconCheck } from '../../icons.jsx';
+import ScrollLink from './ScrollLink.jsx';
+import { Lanes } from './Decor.jsx';
 import { ACADEMY, PROOF, EVENTS } from './content.js';
 
 /* Stadium track, drawn as SVG so it stays crisp at any size. One lane carries
@@ -47,6 +49,7 @@ function TrackScene() {
 export default function Hero() {
   return (
     <section id="top" className="relative overflow-hidden bg-msr-950">
+      <Lanes />
       <div className="pointer-events-none absolute -right-24 -top-24 h-[28rem] w-[28rem] rounded-full bg-msr-700/40 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-32 left-1/4 h-80 w-80 rounded-full bg-saffron-500/15 blur-3xl" />
 
@@ -71,7 +74,7 @@ export default function Hero() {
           </Reveal>
           <Reveal delay={240}>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a href="#join" className="btn-accent">Book a free trial morning</a>
+              <ScrollLink to="join" className="btn-accent">Book a free trial morning</ScrollLink>
               <a href={`tel:${ACADEMY.phoneHref}`} className="btn border border-white/25 text-white hover:bg-white/10">
                 <IconPhone className="h-[18px] w-[18px]" /> {ACADEMY.phone}
               </a>

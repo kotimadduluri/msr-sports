@@ -6,6 +6,7 @@ import {
   IconPin, IconPhone, IconWhatsapp, IconMail, IconCircleCheck, IconUser,
   IconMessage, IconTrophy, IconDirections, IconArrowRight, IconClipboardCheck
 } from '../../icons.jsx';
+import { Lanes } from './Decor.jsx';
 import { ACADEMY } from './content.js';
 
 /* Input with a leading icon. `top` aligns the icon for multi-line fields. */
@@ -47,6 +48,7 @@ export default function Join({ courses }) {
 
   return (
     <section id="join" className="relative scroll-mt-20 overflow-hidden bg-msr-950 py-16 md:py-20">
+      <Lanes />
       <div className="pointer-events-none absolute -left-28 top-0 h-80 w-80 rounded-full bg-msr-700/40 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 right-0 h-72 w-72 rounded-full bg-saffron-500/10 blur-3xl" />
 
