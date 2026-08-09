@@ -1,7 +1,8 @@
 import {
   IconShield, IconShieldCheck, IconMedal, IconTarget, IconTrain, IconDumbbell,
   IconTrophy, IconTimer, IconRun, IconRuler, IconClipboardCheck, IconTrendingUp,
-  IconSunrise, IconBook, IconSunset, IconCircleCheck
+  IconSunrise, IconBook, IconSunset, IconCircleCheck, IconPin, IconStudents,
+  IconRupee, IconPhone
 } from '../../icons.jsx';
 
 /* Testing numbers supplied by the owner (Aug 2026) — every call/WhatsApp
@@ -26,13 +27,14 @@ export const EVENT_ICONS = [
 ];
 export const TIMING_ICONS = [IconSunrise, IconBook, IconSunset];
 export const STEP_ICONS = [IconClipboardCheck, IconTimer, IconCircleCheck];
+export const WHY_ICONS = [IconPin, IconTimer, IconShieldCheck, IconStudents, IconRupee, IconPhone];
 
 /* Shown until the courses API answers (and as demo data offline). Names are
    the official exam names and stay English in every language; translated
    descriptions live in the i18n dictionaries under programmes.courses. */
 export const FALLBACK = [
-  { name: 'AP Police Constable — PET + Written', description: 'Ground training for the 100 m, 800 m and 1600 m runs, long jump and shot put, with daily written-exam classes.', fee_amount: 1500 },
-  { name: 'AP Police SI — PET + Written', description: 'Sub-Inspector preparation: physical measurement standards, all PET events, and coaching for Paper I and II.', fee_amount: 2000 },
+  { name: 'AP Police Constable (PET + Written)', description: 'Ground training for the 100 m, 800 m and 1600 m runs, long jump and shot put, with daily written-exam classes.', fee_amount: 1500 },
+  { name: 'AP Police SI (PET + Written)', description: 'Sub-Inspector preparation: physical measurement standards, all PET events, and coaching for Paper I and II.', fee_amount: 2000 },
   { name: 'Indian Army GD / Agniveer', description: '1.6 km timed run, pull-ups, ditch jump and zig-zag balance practice, alongside CEE written coaching.', fee_amount: 1200 },
   { name: 'SSC GD Constable', description: 'Running endurance built up week by week, with complete SSC GD written preparation.', fee_amount: 1200 },
   { name: 'Railway RPF / RRB', description: 'PET training and computer-based-test coaching for RPF constable and RRB group posts.', fee_amount: 1200 },

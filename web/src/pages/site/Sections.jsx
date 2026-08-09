@@ -3,7 +3,7 @@ import { rupees } from '../../api';
 import { Reveal } from '../../motion.jsx';
 import { IconChevronRight } from '../../icons.jsx';
 import ScrollLink from './ScrollLink.jsx';
-import { TIMING_ICONS, STEP_ICONS, programmeIcon } from './content.js';
+import { TIMING_ICONS, STEP_ICONS, WHY_ICONS, programmeIcon } from './content.js';
 import { useT } from '../../i18n/index.jsx';
 
 function SectionHead({ kicker, title, sub, light = false }) {
@@ -64,17 +64,22 @@ export function WhyMsr() {
         </div>
 
         <div>
-          {L.why.items.map(([t, d], i) => (
-            <Reveal key={t} delay={(i % 2) * 60}>
-              <div className="flex gap-5 border-b border-ink-200/70 py-5 first:pt-0 last:border-0 last:pb-0">
-                <span className="pt-0.5 text-lg font-extrabold tabular-nums text-saffron-500">0{i + 1}</span>
-                <div>
-                  <h3 className="font-bold text-ink-900">{t}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{d}</p>
+          {L.why.items.map(([t, d], i) => {
+            const Icon = WHY_ICONS[i];
+            return (
+              <Reveal key={t} delay={(i % 2) * 60}>
+                <div className="flex gap-4 border-b border-ink-200/70 py-5 first:pt-0 last:border-0 last:pb-0">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-saffron-50 text-saffron-600">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-ink-900">{t}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{d}</p>
+                  </div>
                 </div>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>

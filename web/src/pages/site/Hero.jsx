@@ -171,33 +171,72 @@ function RunScene() {
 
   return (
     <div className="relative mx-auto w-full max-w-md select-none">
-      <svg viewBox="0 100 420 158" className="w-full" aria-hidden="true">
+      <svg viewBox="0 58 420 200" className="w-full" aria-hidden="true">
         <defs>
+          {/* red synthetic track, lit warm by the low sun */}
           <linearGradient id={`${uid}-track`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#22407a" />
-            <stop offset=".45" stopColor="#1b3059" />
-            <stop offset="1" stopColor="#16264a" />
+            <stop offset="0" stopColor="#a84a30" />
+            <stop offset=".5" stopColor="#8f3b27" />
+            <stop offset="1" stopColor="#75301f" />
           </linearGradient>
+          {/* grass infield */}
           <linearGradient id={`${uid}-field`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#152a52" />
-            <stop offset="1" stopColor="#101d3a" />
+            <stop offset="0" stopColor="#2f6f42" />
+            <stop offset="1" stopColor="#1f4e2e" />
           </linearGradient>
           <radialGradient id={`${uid}-glow`}>
             <stop offset="0" stopColor="#f5a524" stopOpacity=".25" />
             <stop offset="1" stopColor="#f5a524" stopOpacity="0" />
           </radialGradient>
+          <radialGradient id={`${uid}-sun`}>
+            <stop offset="0" stopColor="#ffe9b8" />
+            <stop offset=".65" stopColor="#fbc45c" />
+            <stop offset="1" stopColor="#f5a524" />
+          </radialGradient>
+          <radialGradient id={`${uid}-dawn`}>
+            <stop offset="0" stopColor="#f5a524" stopOpacity=".3" />
+            <stop offset=".55" stopColor="#e2703a" stopOpacity=".12" />
+            <stop offset="1" stopColor="#e2703a" stopOpacity="0" />
+          </radialGradient>
         </defs>
 
-        {/* the circuit, seen from the stands */}
+        {/* 5:30 AM: the sun just clearing the far straight */}
+        <ellipse cx="284" cy="114" rx="150" ry="62" fill={`url(#${uid}-dawn)`} />
+        <circle cx="284" cy="111" r="11" fill={`url(#${uid}-sun)`} />
+
+        {/* floodlight masts, still switched on at dawn */}
+        {[58, 352].map(mx => (
+          <g key={mx}>
+            <path d={`M${mx} 131 V84 M${mx - 8} 84 H${mx + 8}`} stroke="#243d6f" strokeWidth="2.4" strokeLinecap="round" fill="none" />
+            <ellipse cx={mx} cy="78" rx="13" ry="5" fill="#f5a524" opacity=".14" />
+            {[-6, 0, 6].map(dx => (
+              <g key={dx}>
+                <circle cx={mx + dx} cy="76" r="1.7" fill="#ffdf9e" />
+                <circle cx={mx + dx} cy="80.5" r="1.7" fill="#ffdf9e" opacity=".85" />
+              </g>
+            ))}
+          </g>
+        ))}
+
+        {/* the ground, seen from the stands */}
+        <ellipse cx={CX} cy={CY + 6} rx="207" ry="63" fill="#000" opacity=".2" />
         <ellipse cx={CX} cy={CY} rx="200" ry="60" fill={`url(#${uid}-track)`} />
-        <ellipse cx={CX} cy={CY} rx="143" ry="41" fill="none" stroke="#fff" strokeOpacity=".1" strokeWidth="1.5" strokeDasharray="10 12" />
-        <ellipse cx={CX} cy={CY} rx="171" ry="49" fill="none" stroke="#fff" strokeOpacity=".1" strokeWidth="1.5" strokeDasharray="10 12" />
+        {/* lane lines: solid white, brightest at the kerb */}
+        <ellipse cx={CX} cy={CY} rx="198" ry="59" fill="none" stroke="#fff" strokeOpacity=".28" strokeWidth="1.1" />
+        {[[128, 34.9], [143, 40.1], [157, 45], [172, 50.2], [186, 55.1]].map(([rx, ry]) => (
+          <ellipse key={rx} cx={CX} cy={CY} rx={rx} ry={ry} fill="none" stroke="#fff" strokeOpacity=".22" strokeWidth="1.1" />
+        ))}
         <ellipse cx={CX} cy={CY} rx="114" ry="30" fill={`url(#${uid}-field)`} />
-        <ellipse cx={CX} cy={CY} rx="114" ry="30" fill="none" stroke="#8dabdd" strokeOpacity=".2" strokeWidth="1.2" />
-        {/* start / finish */}
-        <path d={`M${CX} ${CY + 30} L${CX} ${CY + 59}`} stroke="#fff" strokeOpacity=".4" strokeWidth="2.5" strokeDasharray="4 3" />
-        <text x={CX} y={CY + 6} textAnchor="middle" fill="#2f54a0" fillOpacity=".9"
-          fontFamily="Barlow Condensed, Arial Narrow, sans-serif" fontWeight="700" fontSize="21" letterSpacing="6">
+        <ellipse cx={CX} cy={CY} rx="114" ry="30" fill="none" stroke="#fff" strokeOpacity=".5" strokeWidth="1.6" />
+        {/* mowing rings on the grass */}
+        {[92, 68, 44].map(r => (
+          <ellipse key={r} cx={CX} cy={CY} rx={r} ry={r * 0.26} fill="none" stroke="#3d8050" strokeOpacity=".4" strokeWidth="9" />
+        ))}
+        {/* start / finish line, painted across the lanes */}
+        <path d={`M${CX} ${CY + 30} L${CX} ${CY + 59}`} stroke="#fff" strokeOpacity=".75" strokeWidth="3" />
+        {/* club letters painted on the infield */}
+        <text x={CX} y={CY + 6} textAnchor="middle" fill="#fff" fillOpacity=".85"
+          fontFamily="Barlow Condensed, Arial Narrow, sans-serif" fontWeight="700" fontSize="20" letterSpacing="6">
           MSR
         </text>
 

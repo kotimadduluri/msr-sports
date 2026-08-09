@@ -47,9 +47,9 @@ const coaches = db.prepare("SELECT id FROM users WHERE role='coach'").all().map(
 
 /* ---------- courses ---------- */
 const courses = [
-  { name: 'AP Police Constable — PET + Written', category: 'govt-job', duration_months: 6, fee_amount: 1500, admission_fee: 1000,
+  { name: 'AP Police Constable (PET + Written)', category: 'govt-job', duration_months: 6, fee_amount: 1500, admission_fee: 1000,
     description: 'Ground training for the 100m, 800m/1600m run, long jump and shot put, plus daily written-exam classes for Arithmetic, Reasoning and General Studies.' },
-  { name: 'AP Police SI — PET + Written', category: 'govt-job', duration_months: 9, fee_amount: 2000, admission_fee: 1500,
+  { name: 'AP Police SI (PET + Written)', category: 'govt-job', duration_months: 9, fee_amount: 2000, admission_fee: 1500,
     description: 'Intensive SI preparation covering physical measurement standards, all PET events and the full Paper I & II written syllabus.' },
   { name: 'Indian Army GD / Agniveer', category: 'govt-job', duration_months: 4, fee_amount: 1200, admission_fee: 800,
     description: '1.6 km timed run, pull-ups, 9-feet ditch and zig-zag balance practice with CEE written coaching.' },

@@ -40,9 +40,9 @@ export default function Wall() {
                   </span>
                   <div className="min-w-0">
                     <p className="truncate font-bold text-ink-900">{s.name}
-                      {s.village && <span className="font-normal text-ink-500"> · {s.village}</span>}
+                      {s.village && <span className="font-normal text-ink-500">, {s.village}</span>}
                     </p>
-                    <p className="truncate text-sm text-ink-600">{s.exam} — <span className="font-semibold tabular-nums">{s.year}</span></p>
+                    <p className="truncate text-sm text-ink-600">{s.exam} <span className="font-semibold tabular-nums">{s.year}</span></p>
                   </div>
                 </div>
               </Reveal>

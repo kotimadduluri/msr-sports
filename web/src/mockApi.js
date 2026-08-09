@@ -52,7 +52,7 @@ db.benchmarks = [
 
 db.expenses = [
   { id: 1, date: `${month}-01`, category: 'rent', description: 'Ground rent', amount: 8000 },
-  { id: 2, date: `${month}-01`, category: 'salaries', description: 'Coaches — monthly', amount: 42000 },
+  { id: 2, date: `${month}-01`, category: 'salaries', description: 'Coach salaries for the month', amount: 42000 },
   { id: 3, date: `${month}-03`, category: 'equipment', description: 'Shot put 7.26kg x2, cones', amount: 5600 },
   { id: 4, date: `${month}-05`, category: 'electricity', description: 'Office + floodlight bill', amount: 2350 },
   { id: 5, date: `${month}-07`, category: 'maintenance', description: 'Track rolling and lane marking', amount: 1800 }
@@ -68,14 +68,14 @@ db.selections = [
 ].map(s => ({ ...s, published: 1 }));
 
 db.notices = [
-  { id: 1, title: 'SSC GD Constable 2026 — notification released', exam: 'SSC GD Constable', body: 'Apply online before the last date. Bring your documents to the office and we will help you fill the form.', link: null, published: 1, created_at: `${TODAY} 09:00` },
-  { id: 2, title: 'Agniveer rally — district dates announced', exam: 'Indian Army GD / Agniveer', body: 'Rally expected in the district next quarter. Focus batches start this month.', link: null, published: 1, created_at: `${TODAY} 08:00` }
+  { id: 1, title: 'SSC GD Constable 2026 notification is out', exam: 'SSC GD Constable', body: 'Apply online before the last date. Bring your documents to the office and we will help you fill the form.', link: null, published: 1, created_at: `${TODAY} 09:00` },
+  { id: 2, title: 'Agniveer rally: district dates announced', exam: 'Indian Army GD / Agniveer', body: 'Rally expected in the district next quarter. Focus batches start this month.', link: null, published: 1, created_at: `${TODAY} 08:00` }
 ];
 
 db.sessions = [];
 /* one injured athlete, in the first batch so the roll-call flag is visible */
 const injured = db.students.find(s => s.status === 'active' && s.batch_id === db.batches[0].id);
-if (injured) injured.availability_note = 'Knee strain — no running this week';
+if (injured) injured.availability_note = 'Knee strain, no running this week';
 
 /* Owner's testing numbers: every call/WhatsApp action in the demo reaches
    these two phones instead of the snapshot's fake numbers — safe to tap. */
