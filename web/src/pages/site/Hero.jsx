@@ -58,10 +58,14 @@ function Athlete({ x, y, scale, tone, toneBack, phase = 0, drift, on }) {
   const t1 = `-${(phase + T / 2).toFixed(2)}s`;
   return (
     <g transform={`translate(${x} ${y}) scale(${scale})`}>
-      {/* contact shadow */}
-      <ellipse cx="1" cy="1.5" rx="13" ry="2.6" fill="#000" opacity=".3">
-        {on && <animate attributeName="rx" values="13;9.5;13" dur={`${T / 2}s`} begin={t0} repeatCount="indefinite" />}
-        {on && <animate attributeName="opacity" values=".3;.18;.3" dur={`${T / 2}s`} begin={t0} repeatCount="indefinite" />}
+      {/* soft grounded shadow — wide faint halo plus a darker core, squashing
+         with each footstrike while the body bobs above it */}
+      <ellipse cx="1" cy="1.8" rx="19" ry="4.2" fill="#000" opacity=".22">
+        {on && <animate attributeName="rx" values="19;14;19" dur={`${T / 2}s`} begin={t0} repeatCount="indefinite" />}
+      </ellipse>
+      <ellipse cx="1" cy="1.5" rx="12" ry="2.6" fill="#000" opacity=".42">
+        {on && <animate attributeName="rx" values="12;8.5;12" dur={`${T / 2}s`} begin={t0} repeatCount="indefinite" />}
+        {on && <animate attributeName="opacity" values=".42;.26;.42" dur={`${T / 2}s`} begin={t0} repeatCount="indefinite" />}
       </ellipse>
 
       <g>
@@ -198,12 +202,8 @@ function RunScene() {
           ))}
         </g>
 
-        {/* boundary wall with signage */}
+        {/* boundary wall */}
         <rect x="0" y="88" width="420" height="38" fill="#13234a" />
-        <text x="210" y="114" textAnchor="middle" fill="#2f54a0" fillOpacity=".95"
-          fontFamily="Barlow Condensed, Arial Narrow, sans-serif" fontWeight="700" fontSize="22" letterSpacing="7">
-          MSR SPORTS ACADEMY
-        </text>
         <path d="M0 126 H420" stroke="#f5a524" strokeOpacity=".55" strokeWidth="2.5" />
         <rect x="0" y="126" width="420" height="134" fill="#131f3c" />
 
@@ -223,20 +223,28 @@ function RunScene() {
         <LapPack on={on} glowId={`${uid}-glow`} />
       </svg>
 
-      {/* floating proof cards — real screens from the admin app */}
-      <div className="absolute -right-2 -top-4 animate-float rounded-2xl bg-white/95 p-3.5 shadow-pop backdrop-blur sm:-right-6">
-        <p className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-ink-500">
-          <IconTimer className="h-3.5 w-3.5 text-msr-700" /> 1600 m — season best
-        </p>
-        <p className="mt-1 font-display text-2xl font-bold text-ink-900">5 min 08 s</p>
-        <p className="text-2xs font-semibold text-good">−12 s since June</p>
-      </div>
-      <div className="absolute -left-2 -bottom-6 animate-float rounded-2xl bg-white/95 p-3.5 shadow-pop backdrop-blur sm:-left-6" style={{ animationDelay: '-3s' }}>
-        <p className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-wider text-ink-500">
-          <IconCheck className="h-3.5 w-3.5 text-msr-700" /> Morning roll call
-        </p>
-        <p className="mt-1 font-display text-2xl font-bold text-ink-900">94% present</p>
-        <p className="text-2xs text-ink-500">Marked at the ground, 6:05 AM</p>
+      {/* proof from the admin app, kept clear of the track */}
+      <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="flex items-center gap-3 rounded-2xl bg-white/95 p-3.5 shadow-pop backdrop-blur">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-msr-50 text-msr-700">
+            <IconTimer className="h-5 w-5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-2xs font-semibold uppercase tracking-wider text-ink-500">1600 m best</span>
+            <span className="block font-display text-xl font-bold leading-tight text-ink-900">
+              5 min 08 s <span className="text-[13px] font-sans font-semibold text-good">−12 s</span>
+            </span>
+          </span>
+        </div>
+        <div className="flex items-center gap-3 rounded-2xl bg-white/95 p-3.5 shadow-pop backdrop-blur">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-msr-50 text-msr-700">
+            <IconCheck className="h-5 w-5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-2xs font-semibold uppercase tracking-wider text-ink-500">Morning roll call</span>
+            <span className="block font-display text-xl font-bold leading-tight text-ink-900">94% present</span>
+          </span>
+        </div>
       </div>
     </div>
   );
