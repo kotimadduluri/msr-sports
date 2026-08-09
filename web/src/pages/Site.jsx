@@ -1,21 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api';
-import { Logo, IconPhone, IconMenu, IconClose, IconMail, IconPin } from '../icons.jsx';
+import { Logo, IconPhone, IconMenu, IconClose, IconMail, IconPin, IconGlobe } from '../icons.jsx';
+import { LocaleProvider, useLocale, useT, LANGS } from '../i18n/index.jsx';
 import Hero from './site/Hero.jsx';
 import ScrollLink from './site/ScrollLink.jsx';
 import { Programmes, WhyMsr, TrainingDay, Steps } from './site/Sections.jsx';
 import Join from './site/Join.jsx';
 import { ACADEMY, FALLBACK } from './site/content.js';
 
-const NAV_LINKS = [
-  ['programmes', 'Programmes'],
-  ['why', 'Why MSR'],
-  ['timings', 'Timings'],
-  ['join', 'Contact']
-];
+/* Section ids are fixed; only the labels translate. */
+const NAV_IDS = ['programmes', 'why', 'timings', 'join'];
+const navLabel = (L, id) => (id === 'join' ? L.nav.contact : L.nav[id]);
+
+function LangPicker({ className = '' }) {
+  const { lang, setLang } = useLocale();
+  return (
+    <label className={`relative inline-flex items-center ${className}`}>
+      <span className="sr-only">Language</span>
+      <IconGlobe className="pointer-events-none absolute left-2.5 h-4 w-4 text-ink-500" />
+      <select value={lang} onChange={e => setLang(e.target.value)}
+        className="cursor-pointer appearance-none rounded-xl border border-ink-200 bg-white py-2 pl-8 pr-3 text-sm font-semibold text-ink-700 outline-none transition hover:border-ink-300 focus:border-msr-500">
+        {LANGS.map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+      </select>
+    </label>
+  );
+}
 
 function Footer() {
+  const L = useT();
   return (
     <footer className="border-t border-white/10 bg-msr-950 text-msr-100">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.4fr_1fr_1.3fr] md:gap-8">
@@ -24,27 +37,24 @@ function Footer() {
             <Logo className="h-10 w-10" />
             <span className="leading-tight">
               <span className="block text-[15px] font-extrabold text-white">MSR Sports Academy</span>
-              <span className="block text-2xs text-msr-300">Chirala · Andhra Pradesh</span>
+              <span className="block text-2xs text-msr-300">{L.footer.place}</span>
             </span>
           </div>
-          <p className="mt-4 max-w-xs text-sm leading-relaxed text-msr-200">
-            Ground training and written-exam coaching for police, army, SSC and
-            railway recruitment — one campus, one preparation.
-          </p>
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-msr-200">{L.footer.blurb}</p>
         </div>
 
         <nav aria-label="Footer">
-          <p className="text-2xs font-bold uppercase tracking-widest text-msr-300">Explore</p>
+          <p className="text-2xs font-bold uppercase tracking-widest text-msr-300">{L.footer.explore}</p>
           <ul className="mt-3 space-y-2.5 text-sm font-medium">
-            {NAV_LINKS.map(([id, label]) => (
-              <li key={id}><ScrollLink to={id} className="transition hover:text-white">{label}</ScrollLink></li>
+            {NAV_IDS.map(id => (
+              <li key={id}><ScrollLink to={id} className="transition hover:text-white">{navLabel(L, id)}</ScrollLink></li>
             ))}
-            <li><Link to="/login" className="transition hover:text-white">Staff login</Link></li>
+            <li><Link to="/login" className="transition hover:text-white">{L.actions.staffLogin}</Link></li>
           </ul>
         </nav>
 
         <div>
-          <p className="text-2xs font-bold uppercase tracking-widest text-msr-300">Contact</p>
+          <p className="text-2xs font-bold uppercase tracking-widest text-msr-300">{L.footer.contact}</p>
           <ul className="mt-3 space-y-2.5 text-sm font-medium">
             <li>
               <a href={`tel:${ACADEMY.phoneHref}`} className="flex items-center gap-2.5 transition hover:text-white">
@@ -71,7 +81,8 @@ function Footer() {
   );
 }
 
-export default function Site() {
+function SitePage() {
+  const L = useT();
   const [courses, setCourses] = useState([]);
   const [menu, setMenu] = useState(false);
 
@@ -93,12 +104,13 @@ export default function Site() {
           </ScrollLink>
 
           <nav className="hidden items-center gap-7 md:flex">
-            {NAV_LINKS.map(([id, label]) => <ScrollLink key={id} to={id} className={link}>{label}</ScrollLink>)}
+            {NAV_IDS.map(id => <ScrollLink key={id} to={id} className={link}>{navLabel(L, id)}</ScrollLink>)}
           </nav>
 
           <div className="flex items-center gap-2">
-            <ScrollLink to="join" className="btn-primary btn-sm hidden sm:inline-flex">Join now</ScrollLink>
-            <Link to="/login" className="hidden text-sm font-semibold text-ink-500 hover:text-msr-800 lg:block">Staff login</Link>
+            <LangPicker className="hidden md:inline-flex" />
+            <ScrollLink to="join" className="btn-primary btn-sm hidden sm:inline-flex">{L.actions.joinNow}</ScrollLink>
+            <Link to="/login" className="hidden text-sm font-semibold text-ink-500 hover:text-msr-800 lg:block">{L.actions.staffLogin}</Link>
             <button onClick={() => setMenu(v => !v)} className="rounded-xl p-2 text-ink-600 md:hidden" aria-label="Menu" aria-expanded={menu}>
               {menu ? <IconClose /> : <IconMenu />}
             </button>
@@ -106,11 +118,12 @@ export default function Site() {
         </div>
         {menu && (
           <div className="animate-fade-up border-t border-ink-200 bg-white px-4 py-3 md:hidden">
-            {NAV_LINKS.map(([id, label]) => (
+            {NAV_IDS.map(id => (
               <ScrollLink key={id} to={id} onClick={() => setMenu(false)}
-                className="block rounded-lg px-2 py-3 text-sm font-semibold text-ink-700 hover:bg-ink-50">{label}</ScrollLink>
+                className="block rounded-lg px-2 py-3 text-sm font-semibold text-ink-700 hover:bg-ink-50">{navLabel(L, id)}</ScrollLink>
             ))}
-            <Link to="/login" className="block rounded-lg px-2 py-3 text-sm font-semibold text-ink-500">Staff login</Link>
+            <Link to="/login" className="block rounded-lg px-2 py-3 text-sm font-semibold text-ink-500">{L.actions.staffLogin}</Link>
+            <div className="px-2 pb-1 pt-2"><LangPicker /></div>
           </div>
         )}
       </header>
@@ -126,9 +139,17 @@ export default function Site() {
       {/* sticky call bar on phones */}
       <div className="sticky bottom-0 z-30 flex gap-2 border-t border-ink-200 bg-white/95 p-3 backdrop-blur-md md:hidden"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}>
-        <a href={`tel:${ACADEMY.phoneHref}`} className="btn-ghost flex-1"><IconPhone className="h-[18px] w-[18px]" /> Call</a>
-        <ScrollLink to="join" className="btn-primary flex-1">Join now</ScrollLink>
+        <a href={`tel:${ACADEMY.phoneHref}`} className="btn-ghost flex-1"><IconPhone className="h-[18px] w-[18px]" /> {L.actions.call}</a>
+        <ScrollLink to="join" className="btn-primary flex-1">{L.actions.joinNow}</ScrollLink>
       </div>
     </div>
+  );
+}
+
+export default function Site() {
+  return (
+    <LocaleProvider>
+      <SitePage />
+    </LocaleProvider>
   );
 }

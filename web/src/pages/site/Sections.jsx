@@ -3,7 +3,8 @@ import { rupees } from '../../api';
 import { Reveal } from '../../motion.jsx';
 import { IconChevronRight } from '../../icons.jsx';
 import ScrollLink from './ScrollLink.jsx';
-import { WHY, TIMINGS, STEPS, programmeIcon } from './content.js';
+import { TIMING_ICONS, STEP_ICONS, programmeIcon } from './content.js';
+import { useT } from '../../i18n/index.jsx';
 
 function SectionHead({ kicker, title, sub, light = false }) {
   return (
@@ -18,10 +19,10 @@ function SectionHead({ kicker, title, sub, light = false }) {
 }
 
 export function Programmes({ list }) {
+  const L = useT();
   return (
     <section id="programmes" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 md:py-20">
-      <SectionHead kicker="What we coach" title="Choose your recruitment"
-        sub="Every programme pairs ground training with written-exam classes. Fees are monthly, and a receipt is issued for every payment." />
+      <SectionHead kicker={L.programmes.kicker} title={L.programmes.title} sub={L.programmes.sub} />
       <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((c, i) => {
           const Icon = programmeIcon(c.name);
@@ -32,11 +33,11 @@ export function Programmes({ list }) {
                   <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="text-[17px] font-bold leading-snug text-ink-900">{c.name}</h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-600">{c.description}</p>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-ink-600">{L.programmes.courses[c.name] || c.description}</p>
                 <div className="mt-5 flex items-center justify-between border-t border-ink-100 pt-4">
-                  <p className="font-bold text-ink-900">{rupees(c.fee_amount)}<span className="text-sm font-medium text-ink-500">/month</span></p>
+                  <p className="font-bold text-ink-900">{rupees(c.fee_amount)}<span className="text-sm font-medium text-ink-500">{L.programmes.perMonth}</span></p>
                   <ScrollLink to="join" className="flex items-center gap-0.5 text-sm font-semibold text-msr-700 hover:text-msr-900">
-                    Enquire <IconChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    {L.actions.enquire} <IconChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </ScrollLink>
                 </div>
               </article>
@@ -49,23 +50,21 @@ export function Programmes({ list }) {
 }
 
 export function WhyMsr() {
+  const L = useT();
   return (
     <section id="why" className="scroll-mt-20 bg-ink-50 py-16 md:py-20">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1.45fr] lg:gap-16">
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <SectionHead kicker="The difference" title="Why students choose MSR"
-            sub="Chirala has gyms and it has tuition centres. What it did not have is one place that treats the run and the written paper as a single preparation." />
+          <SectionHead kicker={L.why.kicker} title={L.why.title} sub={L.why.sub} />
           <Reveal delay={120} className="card mt-8 hidden p-5 lg:block">
-            <p className="font-bold text-ink-900">See it for yourself</p>
-            <p className="mt-1.5 text-sm leading-relaxed text-ink-600">
-              Walk in any morning from 5:30 and watch a full session before you decide anything.
-            </p>
-            <ScrollLink to="join" className="btn-primary btn-sm mt-4">Plan a visit</ScrollLink>
+            <p className="font-bold text-ink-900">{L.why.visit.title}</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{L.why.visit.body}</p>
+            <ScrollLink to="join" className="btn-primary btn-sm mt-4">{L.actions.planVisit}</ScrollLink>
           </Reveal>
         </div>
 
         <div>
-          {WHY.map(([t, d], i) => (
+          {L.why.items.map(([t, d], i) => (
             <Reveal key={t} delay={(i % 2) * 60}>
               <div className="flex gap-5 border-b border-ink-200/70 py-5 first:pt-0 last:border-0 last:pb-0">
                 <span className="pt-0.5 text-lg font-extrabold tabular-nums text-saffron-500">0{i + 1}</span>
@@ -83,51 +82,58 @@ export function WhyMsr() {
 }
 
 export function TrainingDay() {
+  const L = useT();
   return (
     <section id="timings" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6 md:py-20">
-      <SectionHead kicker="A training day" title="The daily schedule"
-        sub="Six days a week, in two shifts, so school, college and working candidates can all train." />
+      <SectionHead kicker={L.timings.kicker} title={L.timings.title} sub={L.timings.sub} />
       <div className="relative mt-10 grid gap-4 md:grid-cols-3">
         <div className="absolute left-0 right-0 top-[26px] hidden border-t-2 border-dashed border-ink-200 md:block" aria-hidden="true" />
-        {TIMINGS.map(([Icon, t, time, d], i) => (
-          <Reveal key={t} delay={i * 110}>
-            <div className="relative">
-              <div className="relative z-10 mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-msr-800 text-saffron-300 shadow-card">
-                <Icon className="h-6 w-6" />
+        {L.timings.slots.map(([t, time, d], i) => {
+          const Icon = TIMING_ICONS[i];
+          return (
+            <Reveal key={t} delay={i * 110}>
+              <div className="relative">
+                <div className="relative z-10 mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-2xl bg-msr-800 text-saffron-300 shadow-card">
+                  <Icon className="h-6 w-6" />
+                </div>
+                <div className="card h-full p-5">
+                  <p className="text-2xs font-semibold uppercase tracking-wider text-ink-500">{t}</p>
+                  <p className="mt-1.5 font-display text-3xl font-bold text-msr-800">{time}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-600">{d}</p>
+                </div>
               </div>
-              <div className="card h-full p-5">
-                <p className="text-2xs font-semibold uppercase tracking-wider text-ink-500">{t}</p>
-                <p className="mt-1.5 font-display text-3xl font-bold text-msr-800">{time}</p>
-                <p className="mt-2 text-sm leading-relaxed text-ink-600">{d}</p>
-              </div>
-            </div>
-          </Reveal>
-        ))}
+            </Reveal>
+          );
+        })}
       </div>
     </section>
   );
 }
 
 export function Steps() {
+  const L = useT();
   return (
     <section className="bg-ink-50 py-16 md:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <SectionHead kicker="Getting started" title="Joining takes one morning" />
+        <SectionHead kicker={L.steps.kicker} title={L.steps.title} />
         <div className="mt-9 grid gap-4 md:grid-cols-3">
-          {STEPS.map(([Icon, t, d], i) => (
-            <Reveal key={t} delay={i * 110}>
-              <div className="card h-full p-6">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-saffron-50 text-saffron-600">
-                    <Icon className="h-5 w-5" />
+          {L.steps.items.map(([t, d], i) => {
+            const Icon = STEP_ICONS[i];
+            return (
+              <Reveal key={t} delay={i * 110}>
+                <div className="card h-full p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-saffron-50 text-saffron-600">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="text-2xs font-bold uppercase tracking-widest text-ink-400">{L.steps.step} {i + 1}</span>
                   </div>
-                  <span className="text-2xs font-bold uppercase tracking-widest text-ink-400">Step {i + 1}</span>
+                  <h3 className="mt-4 font-bold text-ink-900">{t}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-ink-600">{d}</p>
                 </div>
-                <h3 className="mt-4 font-bold text-ink-900">{t}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink-600">{d}</p>
-              </div>
-            </Reveal>
-          ))}
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Activity, ArrowRight, BookOpen, Calendar, CalendarCheck, ChevronLeft,
   ChevronRight, CircleCheck, ClipboardCheck, Clock, Download, Dumbbell,
-  Inbox, IndianRupee, LayoutDashboard, LogOut, Mail, MapPin, Medal, Menu,
+  Globe, Inbox, IndianRupee, LayoutDashboard, LogOut, Mail, MapPin, Medal, Menu,
   MessageCircle, MessageSquare, Navigation, Phone, Plus, Ruler, Search,
   Settings, Shield, ShieldCheck, Sparkles, Sunrise, Sunset, Target, Timer,
   TrainFront, TrendingUp, TriangleAlert, Trophy, User, Users, X
@@ -58,6 +58,7 @@ export const IconShieldCheck = wrap(ShieldCheck);
 export const IconTrain = wrap(TrainFront);
 export const IconUser = wrap(User);
 export const IconMessage = wrap(MessageSquare);
+export const IconGlobe = wrap(Globe);
 export const IconDirections = wrap(Navigation);
 
 /* the mark — a crest with the MSR monogram, gold star and track lines.

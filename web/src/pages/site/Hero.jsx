@@ -3,7 +3,8 @@ import { Reveal, CountUp, Marquee } from '../../motion.jsx';
 import { IconPin, IconPhone, IconTimer, IconCheck } from '../../icons.jsx';
 import ScrollLink from './ScrollLink.jsx';
 import { Lanes } from './Decor.jsx';
-import { ACADEMY, PROOF, EVENTS } from './content.js';
+import { ACADEMY, EVENT_ICONS } from './content.js';
+import { useT } from '../../i18n/index.jsx';
 
 /* ---------------------------------------------------------------- athletes
    Pictogram athletes built from thick round-capped strokes, animated as a
@@ -163,6 +164,7 @@ function LapPack({ on, glowId }) {
 }
 
 function RunScene() {
+  const L = useT();
   const uid = useId();
   const [on] = useState(() => typeof window === 'undefined'
     || !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -209,9 +211,9 @@ function RunScene() {
             <IconTimer className="h-5 w-5" />
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-2xs font-semibold uppercase tracking-wider text-ink-500">1600 m best</span>
+            <span className="block truncate text-2xs font-semibold uppercase tracking-wider text-ink-500">{L.hero.scene.bestLabel}</span>
             <span className="block font-display text-xl font-bold leading-tight text-ink-900">
-              5 min 08 s <span className="text-[13px] font-sans font-semibold text-good">−12 s</span>
+              {L.hero.scene.bestValue} <span className="text-[13px] font-sans font-semibold text-good">−12 s</span>
             </span>
           </span>
         </div>
@@ -220,8 +222,8 @@ function RunScene() {
             <IconCheck className="h-5 w-5" />
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-2xs font-semibold uppercase tracking-wider text-ink-500">Morning roll call</span>
-            <span className="block font-display text-xl font-bold leading-tight text-ink-900">94% present</span>
+            <span className="block truncate text-2xs font-semibold uppercase tracking-wider text-ink-500">{L.hero.scene.rollLabel}</span>
+            <span className="block font-display text-xl font-bold leading-tight text-ink-900">{L.hero.scene.rollValue}</span>
           </span>
         </div>
       </div>
@@ -230,6 +232,7 @@ function RunScene() {
 }
 
 export default function Hero() {
+  const L = useT();
   return (
     <section id="top" className="relative overflow-hidden bg-msr-950">
       <Lanes />
@@ -240,24 +243,20 @@ export default function Hero() {
         <div>
           <Reveal>
             <span className="pill bg-white/10 text-white ring-1 ring-inset ring-white/15">
-              <IconPin className="h-3.5 w-3.5" /> Chirala · Bapatla District
+              <IconPin className="h-3.5 w-3.5" /> {L.hero.badge}
             </span>
           </Reveal>
           <Reveal delay={80}>
             <h1 className="mt-5 max-w-xl font-display text-5xl font-bold uppercase leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-[4.25rem]">
-              Your government job starts at <span className="text-saffron-400">5:30 AM.</span>
+              {L.hero.h1a} <span className="text-saffron-400">{L.hero.h1b}</span>
             </h1>
           </Reveal>
           <Reveal delay={160}>
-            <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-msr-100 sm:text-base">
-              We coach candidates for Police, Army, SSC and Railway selection — the physical
-              events on our ground, the written exam in our classroom, and every timing
-              measured so you know exactly where you stand.
-            </p>
+            <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-msr-100 sm:text-base">{L.hero.sub}</p>
           </Reveal>
           <Reveal delay={240}>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <ScrollLink to="join" className="btn-accent">Book a free trial morning</ScrollLink>
+              <ScrollLink to="join" className="btn-accent">{L.hero.ctaTrial}</ScrollLink>
               <a href={`tel:${ACADEMY.phoneHref}`} className="btn border border-white/25 text-white hover:bg-white/10">
                 <IconPhone className="h-[18px] w-[18px]" /> {ACADEMY.phone}
               </a>
@@ -272,7 +271,7 @@ export default function Hero() {
 
       {/* proof, counted up as it scrolls in */}
       <div className="relative mx-auto grid max-w-6xl grid-cols-2 gap-3 px-4 pb-12 sm:px-6 md:grid-cols-4">
-        {PROOF.map(([n, l], i) => (
+        {L.hero.proof.map(([n, l], i) => (
           <Reveal key={l} delay={i * 70} className="rounded-2xl bg-white/[0.07] p-5 ring-1 ring-inset ring-white/10">
             <p className="font-display text-4xl font-bold text-saffron-400 sm:text-[2.75rem]"><CountUp value={n} /></p>
             <p className="mt-1.5 text-[13px] leading-snug text-msr-100">{l}</p>
@@ -283,11 +282,14 @@ export default function Hero() {
       {/* every event the recruitments test */}
       <div className="relative border-t border-white/10 bg-msr-900/60 py-3.5">
         <Marquee>
-          {EVENTS.map(([Icon, label]) => (
-            <span key={label} className="flex items-center gap-2 text-[13px] font-semibold text-msr-100">
-              <Icon className="h-4 w-4 text-saffron-400" /> {label}
-            </span>
-          ))}
+          {L.hero.events.map((label, i) => {
+            const Icon = EVENT_ICONS[i];
+            return (
+              <span key={label} className="flex items-center gap-2 text-[13px] font-semibold text-msr-100">
+                <Icon className="h-4 w-4 text-saffron-400" /> {label}
+              </span>
+            );
+          })}
         </Marquee>
       </div>
     </section>

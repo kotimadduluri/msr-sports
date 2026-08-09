@@ -8,6 +8,7 @@ import {
 } from '../../icons.jsx';
 import { Lanes } from './Decor.jsx';
 import { ACADEMY } from './content.js';
+import { useT } from '../../i18n/index.jsx';
 
 /* Input with a leading icon. `top` aligns the icon for multi-line fields. */
 function Field({ icon: Icon, label, htmlFor, top = false, children }) {
@@ -22,13 +23,8 @@ function Field({ icon: Icon, label, htmlFor, top = false, children }) {
   );
 }
 
-const CONTACTS = [
-  { icon: IconPhone, label: 'Call the office', value: ACADEMY.phone, href: `tel:${ACADEMY.phoneHref}` },
-  { icon: IconWhatsapp, label: 'WhatsApp', value: 'Message us any time', href: `https://wa.me/${ACADEMY.whatsapp}`, external: true },
-  { icon: IconMail, label: 'Email', value: ACADEMY.email, href: `mailto:${ACADEMY.email}` }
-];
-
 export default function Join({ courses }) {
+  const L = useT();
   const [form, setForm] = useState({ name: '', phone: '', village: '', interest: '', message: '' });
   const [state, setState] = useState({ busy: false, done: false, error: '' });
 
@@ -46,6 +42,12 @@ export default function Join({ courses }) {
 
   const set = k => e => setForm({ ...form, [k]: e.target.value });
 
+  const contacts = [
+    { icon: IconPhone, label: L.join.contacts.call, value: ACADEMY.phone, href: `tel:${ACADEMY.phoneHref}` },
+    { icon: IconWhatsapp, label: L.join.contacts.whatsapp, value: L.join.contacts.whatsappValue, href: `https://wa.me/${ACADEMY.whatsapp}`, external: true },
+    { icon: IconMail, label: L.join.contacts.email, value: ACADEMY.email, href: `mailto:${ACADEMY.email}` }
+  ];
+
   return (
     <section id="join" className="relative scroll-mt-20 overflow-hidden bg-msr-950 py-16 md:py-20">
       <Lanes />
@@ -54,14 +56,11 @@ export default function Join({ courses }) {
 
       <div className="relative mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 md:grid-cols-2 md:gap-14">
         <Reveal>
-          <h2 className="font-display text-4xl font-bold uppercase leading-none text-white sm:text-5xl">Join MSR Sports Academy</h2>
-          <p className="mt-4 max-w-md leading-relaxed text-msr-100">
-            Leave your number and our office will call you the same day with fees, batch
-            timings and what to bring on your first morning.
-          </p>
+          <h2 className="font-display text-4xl font-bold uppercase leading-none text-white sm:text-5xl">{L.join.title}</h2>
+          <p className="mt-4 max-w-md leading-relaxed text-msr-100">{L.join.sub}</p>
 
           <div className="mt-8 space-y-3">
-            {CONTACTS.map(({ icon: Icon, label, value, href, external }) => (
+            {contacts.map(({ icon: Icon, label, value, href, external }) => (
               <a key={label} href={href} {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
                 className="group flex items-center gap-4 rounded-2xl bg-white/[0.06] p-4 ring-1 ring-inset ring-white/10 transition hover:bg-white/[0.12]">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-saffron-400/15 text-saffron-400">
@@ -80,11 +79,11 @@ export default function Join({ courses }) {
                 <IconPin className="h-5 w-5" />
               </span>
               <span className="min-w-0">
-                <span className="block text-2xs font-semibold uppercase tracking-wider text-msr-200">The ground</span>
+                <span className="block text-2xs font-semibold uppercase tracking-wider text-msr-200">{L.join.contacts.ground}</span>
                 <span className="block font-semibold leading-snug text-white">{ACADEMY.address}</span>
                 <a href={ACADEMY.mapsUrl} target="_blank" rel="noreferrer"
                   className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold text-saffron-400 underline-offset-4 hover:underline">
-                  <IconDirections className="h-4 w-4" /> Get directions
+                  <IconDirections className="h-4 w-4" /> {L.join.contacts.directions}
                 </a>
               </span>
             </div>
@@ -98,8 +97,8 @@ export default function Join({ courses }) {
                 <IconClipboardCheck className="h-5 w-5" />
               </span>
               <div>
-                <h3 className="text-lg font-bold leading-tight text-ink-900">Admission enquiry</h3>
-                <p className="text-[13px] text-ink-500">Takes 30 seconds — we call back the same day</p>
+                <h3 className="text-lg font-bold leading-tight text-ink-900">{L.join.form.title}</h3>
+                <p className="text-[13px] text-ink-500">{L.join.form.sub}</p>
               </div>
             </div>
 
@@ -108,46 +107,44 @@ export default function Join({ courses }) {
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-good">
                   <IconCircleCheck className="h-8 w-8" />
                 </div>
-                <h3 className="mt-4 text-xl font-bold text-ink-900">Enquiry received</h3>
-                <p className="mx-auto mt-2 max-w-xs text-sm text-ink-600">
-                  Our office will call you shortly. For a faster reply, message us on WhatsApp.
-                </p>
+                <h3 className="mt-4 text-xl font-bold text-ink-900">{L.join.form.doneTitle}</h3>
+                <p className="mx-auto mt-2 max-w-xs text-sm text-ink-600">{L.join.form.doneBody}</p>
                 <button onClick={() => setState({ busy: false, done: false, error: '' })} className="btn-ghost mt-6">
-                  Send another enquiry
+                  {L.join.form.again}
                 </button>
               </div>
             ) : (
               <form onSubmit={submit} className="space-y-4 p-6">
-                <Field icon={IconUser} label="Your name" htmlFor="n">
+                <Field icon={IconUser} label={L.join.form.name} htmlFor="n">
                   <input id="n" className="input pl-11" required enterKeyHint="next"
-                    placeholder="Full name" value={form.name} onChange={set('name')} />
+                    placeholder={L.join.form.namePh} value={form.name} onChange={set('name')} />
                 </Field>
-                <Field icon={IconPhone} label="Mobile number" htmlFor="ph">
+                <Field icon={IconPhone} label={L.join.form.phone} htmlFor="ph">
                   <input id="ph" className="input pl-11" inputMode="numeric" required pattern="[0-9+\-\s]{10,15}"
-                    placeholder="9XXXXXXXXX" enterKeyHint="next" value={form.phone} onChange={set('phone')} />
+                    placeholder={L.join.form.phonePh} enterKeyHint="next" value={form.phone} onChange={set('phone')} />
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field icon={IconPin} label="Village or town" htmlFor="v">
+                  <Field icon={IconPin} label={L.join.form.village} htmlFor="v">
                     <input id="v" className="input pl-11" enterKeyHint="next"
-                      placeholder="Chirala" value={form.village} onChange={set('village')} />
+                      placeholder={L.join.form.villagePh} value={form.village} onChange={set('village')} />
                   </Field>
-                  <Field icon={IconTrophy} label="Which programme?" htmlFor="i">
+                  <Field icon={IconTrophy} label={L.join.form.programme} htmlFor="i">
                     <select id="i" className="input pl-11" value={form.interest} onChange={set('interest')}>
-                      <option value="">Not sure yet</option>
+                      <option value="">{L.join.form.notSure}</option>
                       {courses.map(c => <option key={c.name}>{c.name}</option>)}
                     </select>
                   </Field>
                 </div>
-                <Field icon={IconMessage} label="Message (optional)" htmlFor="m" top>
-                  <textarea id="m" className="input pl-11" rows="2" placeholder="Best time to call you"
+                <Field icon={IconMessage} label={L.join.form.message} htmlFor="m" top>
+                  <textarea id="m" className="input pl-11" rows="2" placeholder={L.join.form.messagePh}
                     value={form.message} onChange={set('message')} />
                 </Field>
 
                 {state.error && <p className="rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-700">{state.error}</p>}
                 <button className="btn-accent w-full" disabled={state.busy}>
-                  {state.busy ? <Spinner className="h-5 w-5" /> : <>Request a call back <IconArrowRight className="h-[18px] w-[18px]" /></>}
+                  {state.busy ? <Spinner className="h-5 w-5" /> : <>{L.join.form.submit} <IconArrowRight className="h-[18px] w-[18px]" /></>}
                 </button>
-                <p className="text-center text-xs text-ink-500">We only use your number to call you about admission.</p>
+                <p className="text-center text-xs text-ink-500">{L.join.form.privacy}</p>
               </form>
             )}
           </div>

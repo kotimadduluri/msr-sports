@@ -139,8 +139,16 @@ Follow these; they are why the UI looks like one product.
   `index.css` collapses CSS transitions and `CountUp` checks the media query
   itself. In-page anchors must go through `pages/site/ScrollLink.jsx` — plain
   `#id` hrefs break under the demo's HashRouter (the catch-all route swallows
-  them). Website copy lives in `pages/site/content.js`, not inline in
-  components.
+  them).
+- **Localization** — the public site is multilingual (English default, plus
+  Telugu, Hindi, Tamil, Kannada); the staff portal stays English. All site
+  copy lives in `web/src/i18n/` — one dictionary per language, `en.js` is the
+  source of truth and components read it via `useT()`; never hardcode
+  visitor-facing strings in site components. Non-copy site data (contacts,
+  icon arrays, course fallback) stays in `pages/site/content.js`. Any copy or
+  language change must follow `.claude/skills/translator/SKILL.md` and pass
+  `node scripts/i18n-check.mjs` (run from `web/`). Indic text renders via
+  system fonts — never add CDN webfonts.
 - **Touch** — `.btn` is min 44px tall. Keep it. This app is used outdoors at
   5:30 AM on a phone.
 - **Loading** — skeletons (`<Loading rows={n} />`), not spinners.
