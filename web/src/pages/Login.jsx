@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api, setSession, getToken, isDemo } from '../api';
 import { Spinner } from '../components.jsx';
@@ -10,7 +10,10 @@ export default function Login() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  if (getToken()) { nav('/app', { replace: true }); return null; }
+  /* already signed in → straight to the portal (in an effect: navigating
+     during render is unreliable under StrictMode) */
+  useEffect(() => { if (getToken()) nav('/app', { replace: true }); }, [nav]);
+  if (getToken()) return null;
 
   async function submit(e) {
     e.preventDefault();

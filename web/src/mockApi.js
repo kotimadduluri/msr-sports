@@ -391,7 +391,9 @@ function get(path) {
 
 function post(path, body = {}) {
   if (path === '/auth/login') {
-    if (body.password !== 'msr@2026' && body.password !== 'office@2026') throw new Error('Wrong username or password');
+    if (body.password !== 'msr@2026' && body.password !== 'office@2026') {
+      throw new Error('Wrong password — the demo login is 9000000001 / msr@2026');
+    }
     return { token: 'demo-token', user: DEMO_USER };
   }
   if (path === '/enquiries/public' || path === '/enquiries') {

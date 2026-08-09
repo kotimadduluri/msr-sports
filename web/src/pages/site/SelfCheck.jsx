@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { api, rupees, shortDate, secsToTime } from '../../api';
+import { api, isDemo, rupees, shortDate, secsToTime } from '../../api';
 import { Spinner } from '../../components.jsx';
 import { Logo, IconChevronLeft, IconUser, IconCalendar, IconCircleCheck, IconTimer, IconRupee } from '../../icons.jsx';
 import { LocaleProvider, useT } from '../../i18n/index.jsx';
@@ -18,7 +18,10 @@ const STATUS_CLS = {
 
 function CheckPage() {
   const L = useT();
-  const [form, setForm] = useState({ admission_no: '', dob: '' });
+  /* the demo pre-fills a sample student so reviewers can see the page work */
+  const [form, setForm] = useState(isDemo
+    ? { admission_no: 'MSR20260119', dob: '2003-09-06' }
+    : { admission_no: '', dob: '' });
   const [state, setState] = useState({ busy: false, error: '', data: null });
 
   async function submit(e) {
@@ -80,6 +83,12 @@ function CheckPage() {
             </button>
           </div>
         </form>
+
+        {isDemo && (
+          <p className="mt-3 rounded-xl bg-saffron-50 px-4 py-2.5 text-center text-xs font-semibold text-saffron-800">
+            Demo student — <span className="font-mono">MSR20260119</span> · 06 Sep 2003 (pre-filled, just press the button)
+          </p>
+        )}
 
         {state.error && <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{state.error}</p>}
 
