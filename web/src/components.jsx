@@ -1,5 +1,17 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { IconClose, IconAlert, IconCheck, IconInbox } from './icons.jsx';
+
+/* Printable layer. Whatever is rendered inside lands in a hidden div at the
+   end of <body>; @media print hides the app root and shows only this, so a
+   receipt or progress card prints complete — free of the modal's scroll box,
+   whatever its length. Render it only while its modal is open. */
+export function PrintArea({ children }) {
+  return createPortal(
+    <div id="print-area" aria-hidden="true">{children}</div>,
+    document.body
+  );
+}
 
 /* ---------------- toasts ---------------- */
 const ToastCtx = createContext(() => {});

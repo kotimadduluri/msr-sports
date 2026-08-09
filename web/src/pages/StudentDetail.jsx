@@ -1,13 +1,73 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api, rupees, shortDate, secsToTime, waLink, todayISO, monthISO } from '../api';
-import { Loading, Badge, Modal, Field, Stat, useToast, Segmented } from '../components.jsx';
+import { Loading, Badge, Modal, Field, Stat, useToast, Segmented, PrintArea } from '../components.jsx';
 import { HeatStrip } from '../charts.jsx';
 import { IconChevronLeft, IconPhone, IconWhatsapp, IconRupee, IconPlus, IconSpark, IconSettings } from '../icons.jsx';
 import { EVENTS, unitFor, READINESS } from '../events.js';
 import { msg, MsgLang } from '../waTemplates.jsx';
 
 const STATUSES = ['active', 'on-hold', 'dropped', 'passed-out'];
+
+const fmtVal = (value, unit) => unit === 'sec' ? secsToTime(value) : unit === 'm' ? `${value} m` : value;
+const fmtTarget = t => t.unit === 'sec' ? `≤ ${secsToTime(t.target)}` : `≥ ${t.target} ${t.unit === 'count' ? '' : t.unit}`;
+
+/* The card itself — rendered once in the modal (preview) and once inside
+   <PrintArea> so printing gets the complete card free of the modal. */
+function ProgressCardBody({ card }) {
+  return (
+    <div className="rounded-xl border border-ink-300 p-5 text-sm">
+      <div className="text-center">
+        <p className="text-lg font-extrabold">{card.academy?.academy_name || 'MSR Sports Academy'}</p>
+        <p className="text-xs text-ink-500">Monthly progress — {card.month}</p>
+      </div>
+      <hr className="my-3" />
+      <div className="grid grid-cols-2 gap-2">
+        <p className="text-ink-500">Student</p><p className="text-right font-semibold">{card.student.name}</p>
+        <p className="text-ink-500">Admission no</p><p className="text-right font-mono">{card.student.admission_no}</p>
+        <p className="text-ink-500">Programme</p><p className="text-right">{card.student.course_name || '—'}</p>
+        <p className="text-ink-500">Attendance</p>
+        <p className="text-right font-semibold">
+          {card.attendance.pct === null ? '—' : `${card.attendance.pct}%`} ({card.attendance.present}/{card.attendance.total})
+        </p>
+      </div>
+      {card.events.length > 0 && (
+        <>
+          <hr className="my-3" />
+          <div className="space-y-2">
+            {card.events.map(e => {
+              const t = e.targets[0];
+              const improved = e.delta !== null && (e.unit === 'sec' ? e.delta < 0 : e.delta > 0);
+              return (
+                <div key={e.event} className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="font-semibold">{e.event}</p>
+                    <p className="text-xs text-ink-500">
+                      {t ? `target ${fmtTarget(t)} · ${t.exam}` : 'no cut-off set'}
+                      {e.delta !== null && (
+                        <span className={improved ? ' text-good' : ' text-ink-500'}>
+                          {' '}· {improved ? 'improved' : 'changed'} {Math.abs(e.delta)}{e.unit === 'sec' ? 's' : ` ${e.unit}`}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {t && <span className={`rounded-lg px-2 py-0.5 text-2xs font-bold ${READINESS[t.status].cls}`}>{READINESS[t.status].label}</span>}
+                    <p className="font-bold tabular-nums">{fmtVal(e.value, e.unit)}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+      <hr className="my-3" />
+      <div className="flex justify-between text-base font-bold">
+        <span>Fee balance</span><span>{card.balance > 0 ? rupees(card.balance) : 'All clear'}</span>
+      </div>
+    </div>
+  );
+}
 
 export default function StudentDetail() {
   const { id } = useParams();
@@ -86,8 +146,6 @@ export default function StudentDetail() {
   }
 
   const reminder = () => msg('feeReminder', s, s.balance, null, upi);
-  const fmtVal = (value, unit) => unit === 'sec' ? secsToTime(value) : unit === 'm' ? `${value} m` : value;
-  const fmtTarget = t => t.unit === 'sec' ? `≤ ${secsToTime(t.target)}` : `≥ ${t.target} ${t.unit === 'count' ? '' : t.unit}`;
 
   return (
     <div className="space-y-4">
@@ -344,56 +402,7 @@ export default function StudentDetail() {
       <Modal open={cardOpen} onClose={() => setCardOpen(false)} title="Monthly progress card">
         {!card ? <Loading rows={5} /> : (
           <div className="space-y-3">
-            <div id="receipt" className="rounded-xl border border-ink-300 p-5 text-sm">
-              <div className="text-center">
-                <p className="text-lg font-extrabold">{card.academy?.academy_name || 'MSR Sports Academy'}</p>
-                <p className="text-xs text-ink-500">Monthly progress — {card.month}</p>
-              </div>
-              <hr className="my-3" />
-              <div className="grid grid-cols-2 gap-2">
-                <p className="text-ink-500">Student</p><p className="text-right font-semibold">{card.student.name}</p>
-                <p className="text-ink-500">Admission no</p><p className="text-right font-mono">{card.student.admission_no}</p>
-                <p className="text-ink-500">Programme</p><p className="text-right">{card.student.course_name || '—'}</p>
-                <p className="text-ink-500">Attendance</p>
-                <p className="text-right font-semibold">
-                  {card.attendance.pct === null ? '—' : `${card.attendance.pct}%`} ({card.attendance.present}/{card.attendance.total})
-                </p>
-              </div>
-              {card.events.length > 0 && (
-                <>
-                  <hr className="my-3" />
-                  <div className="space-y-2">
-                    {card.events.map(e => {
-                      const t = e.targets[0];
-                      const improved = e.delta !== null && (e.unit === 'sec' ? e.delta < 0 : e.delta > 0);
-                      return (
-                        <div key={e.event} className="flex items-center justify-between gap-2">
-                          <div>
-                            <p className="font-semibold">{e.event}</p>
-                            <p className="text-xs text-ink-500">
-                              {t ? `target ${fmtTarget(t)} · ${t.exam}` : 'no cut-off set'}
-                              {e.delta !== null && (
-                                <span className={improved ? ' text-good' : ' text-ink-500'}>
-                                  {' '}· {improved ? 'improved' : 'changed'} {Math.abs(e.delta)}{e.unit === 'sec' ? 's' : ` ${e.unit}`}
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {t && <span className={`rounded-lg px-2 py-0.5 text-2xs font-bold ${READINESS[t.status].cls}`}>{READINESS[t.status].label}</span>}
-                            <p className="font-bold tabular-nums">{fmtVal(e.value, e.unit)}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-              <hr className="my-3" />
-              <div className="flex justify-between text-base font-bold">
-                <span>Fee balance</span><span>{card.balance > 0 ? rupees(card.balance) : 'All clear'}</span>
-              </div>
-            </div>
+            <ProgressCardBody card={card} />
             <div className="flex items-center justify-between gap-2">
               <MsgLang />
               <div className="flex gap-2">
@@ -407,6 +416,7 @@ export default function StudentDetail() {
           </div>
         )}
       </Modal>
+      {cardOpen && card && <PrintArea><ProgressCardBody card={card} /></PrintArea>}
     </div>
   );
 }
