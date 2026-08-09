@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { api, rupees } from '../api';
-import { Loading, Modal, useToast, Stat } from '../components.jsx';
-import { IconChevronLeft, IconChevronRight, IconCheck, IconTimer, IconSettings, IconPhone } from '../icons.jsx';
+import { api, rupees, waLink } from '../api';
+import { Loading, Modal, Field, useToast, Stat } from '../components.jsx';
+import { IconChevronLeft, IconChevronRight, IconCheck, IconTimer, IconSettings, IconPhone, IconWhatsapp, IconCircleCheck } from '../icons.jsx';
 import { BatchChips, BatchFormFields, batchPayload } from './Batches.jsx';
 
 /* One batch, in full: who is in it, how healthy it is, and the two things a
@@ -17,6 +17,9 @@ export default function BatchDetail() {
   const [coaches, setCoaches] = useState([]);
   const [edit, setEdit] = useState(null);        // form state while the edit modal is open
   const [moving, setMoving] = useState(null);    // the student being moved
+  const [annOpen, setAnnOpen] = useState(false); // batch announcement modal
+  const [annMsg, setAnnMsg] = useState('');
+  const [sent, setSent] = useState(() => new Set());
 
   const load = useCallback(() => {
     api.get('/batches').then(setBatches).catch(e => toast(e.message, 'error'));
@@ -77,6 +80,9 @@ export default function BatchDetail() {
           <div className="flex flex-wrap gap-2">
             <Link to={`/app/attendance?batch=${b.id}`} className="btn-primary"><IconCheck className="h-[18px] w-[18px]" /> Roll call</Link>
             <Link to="/app/testday" className="btn-ghost"><IconTimer className="h-[18px] w-[18px]" /> Test day</Link>
+            <button onClick={() => { setSent(new Set()); setAnnOpen(true); }} className="btn-ghost">
+              <IconWhatsapp className="h-[18px] w-[18px] text-emerald-600" /> Message batch
+            </button>
             <button onClick={openEdit} className="btn-ghost"><IconSettings className="h-[18px] w-[18px]" /> Edit</button>
           </div>
         </div>
@@ -127,6 +133,39 @@ export default function BatchDetail() {
             <button className="btn-primary w-full">Save changes</button>
           </form>
         )}
+      </Modal>
+
+      <Modal open={annOpen} onClose={() => setAnnOpen(false)} title={`Message every ${b.name} family`}>
+        <div className="space-y-3">
+          <Field label="What should they know?" hint="Goes out one tap per family; WhatsApp opens with this text ready.">
+            <textarea className="input" rows="3" value={annMsg} onChange={e => setAnnMsg(e.target.value)}
+              placeholder={`${b.name}: ground update for tomorrow morning`} />
+          </Field>
+          <div className="max-h-80 space-y-1.5 overflow-y-auto">
+            {roster.map(s => (
+              <div key={s.id} className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 ${
+                sent.has(s.id) ? 'bg-emerald-50' : 'bg-ink-50'}`}>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-ink-900">{s.name}</p>
+                  <p className="text-2xs text-ink-500">{s.guardian_phone || s.phone}</p>
+                </div>
+                {sent.has(s.id) ? (
+                  <span className="flex items-center gap-1 text-2xs font-bold text-emerald-700">
+                    <IconCircleCheck className="h-4 w-4" /> Sent
+                  </span>
+                ) : (
+                  <a className={`btn-ghost btn-sm shrink-0 ${annMsg.trim() ? '' : 'pointer-events-none opacity-40'}`}
+                    target="_blank" rel="noreferrer"
+                    onClick={() => setSent(prev => new Set(prev).add(s.id))}
+                    href={waLink(s.guardian_phone || s.phone, annMsg.trim())}>
+                    <IconWhatsapp className="h-4 w-4 text-emerald-600" /> Open
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs text-ink-500">{sent.size} of {roster.length} sent</p>
+        </div>
       </Modal>
 
       <Modal open={!!moving} onClose={() => setMoving(null)} title={moving ? `Move ${moving.name}` : ''}>

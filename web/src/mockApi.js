@@ -416,8 +416,10 @@ function get(path) {
 
 function post(path, body = {}) {
   if (path === '/auth/login') {
+    const coach = db.users.find(x => x.phone === body.username && x.role === 'coach');
+    if (coach && body.password === 'coach@2026') return { token: 'demo-token', user: coach };
     if (body.password !== 'msr@2026' && body.password !== 'office@2026') {
-      throw new Error('Wrong password — the demo login is 9000000001 / msr@2026');
+      throw new Error('Wrong password. The demo login is 9000000001 / msr@2026');
     }
     return { token: 'demo-token', user: DEMO_USER };
   }
@@ -466,8 +468,14 @@ function post(path, body = {}) {
   if (path === '/students') {
     const id = Math.max(0, ...db.students.map(s => s.id)) + 1;
     const admission_no = `MSR${new Date().getFullYear()}${String(id).padStart(4, '0')}`;
+    let warning = null;
+    const b = batches[body.batch_id];
+    if (b) {
+      const n = db.students.filter(s => s.batch_id === b.id && s.status === 'active').length;
+      if (n >= b.capacity) warning = `${b.name} is already full (${n}/${b.capacity}). Admitted anyway; consider moving someone or picking another batch.`;
+    }
     db.students.push({ ...body, id, admission_no, status: 'active', join_date: TODAY });
-    return { id, admission_no };
+    return { id, admission_no, warning };
   }
   if (path === '/students/tests/bulk') {
     const clean = (body.entries || []).filter(e => e.student_id && isFinite(Number(e.value)) && Number(e.value) > 0);

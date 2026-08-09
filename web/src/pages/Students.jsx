@@ -47,7 +47,8 @@ export default function Students() {
       const payload = { ...form };
       for (const k of ['course_id', 'batch_id', 'height_cm', 'weight_kg']) payload[k] = payload[k] ? Number(payload[k]) : null;
       const res = await api.post('/students', payload);
-      toast(`${form.name} admitted — ${res.admission_no}`);
+      toast(`${form.name} admitted, ${res.admission_no}`);
+      if (res.warning) toast(res.warning, 'error');
       setOpen(false); setForm(blank); load();
     } catch (err) { toast(err.message, 'error'); }
     finally { setSaving(false); }

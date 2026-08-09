@@ -73,6 +73,15 @@ r.post('/', allow(...OFFICE), (req, res) => {
   const b = req.body || {};
   if (!b.name) return res.status(400).json({ error: 'Student name is required' });
   const admission_no = b.admission_no || nextAdmissionNo();
+  /* Full batches never block an admission, but the office should hear about
+     it at the moment they can still pick a different one. */
+  let warning = null;
+  if (b.batch_id) {
+    const cap = db.prepare(`SELECT b.name, b.capacity,
+      (SELECT COUNT(*) FROM students s WHERE s.batch_id = b.id AND s.status='active') AS n
+      FROM batches b WHERE b.id = ?`).get(b.batch_id);
+    if (cap && cap.n >= cap.capacity) warning = `${cap.name} is already full (${cap.n}/${cap.capacity}). Admitted anyway; consider moving someone or picking another batch.`;
+  }
   const info = db.prepare(`INSERT INTO students
     (admission_no,name,gender,dob,phone,guardian_name,guardian_phone,address,village,aadhaar_last4,
      course_id,batch_id,join_date,status,height_cm,chest_cm,chest_expanded_cm,weight_kg,target_exam,notes)
@@ -88,7 +97,7 @@ r.post('/', allow(...OFFICE), (req, res) => {
       chest_expanded_cm: b.chest_expanded_cm || null, weight_kg: b.weight_kg || null,
       target_exam: b.target_exam || null, notes: b.notes || null
     });
-  res.status(201).json({ id: info.lastInsertRowid, admission_no });
+  res.status(201).json({ id: info.lastInsertRowid, admission_no, warning });
 });
 
 r.patch('/:id', allow(...OFFICE), (req, res) => {

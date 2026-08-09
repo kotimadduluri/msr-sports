@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { api, rupees } from '../api';
+import { api, rupees, getUser } from '../api';
 import { Loading, Modal, Field, useToast, PageHead, Segmented } from '../components.jsx';
-import { IconPlus, IconSunrise, IconSunset, IconChevronRight } from '../icons.jsx';
+import { IconPlus, IconSunrise, IconSunset, IconChevronRight, IconUser } from '../icons.jsx';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -88,9 +88,14 @@ export const batchPayload = f => ({
    rail at its start time, with its health beside it. */
 function Timeline({ batches }) {
   const active = batches.filter(b => b.active !== 0);
+  /* A coach lands on their own batches first; the rest of the day follows. */
+  const user = getUser();
+  const mine = user?.role === 'coach' ? active.filter(b => b.coach_id === user.id) : [];
+  const rest = mine.length ? active.filter(b => b.coach_id !== user.id) : active;
   const groups = [
-    { label: 'Morning ground', Icon: IconSunrise, list: active.filter(b => b.start_time < '12:00') },
-    { label: 'Evening ground', Icon: IconSunset, list: active.filter(b => b.start_time >= '12:00') }
+    { label: 'Your batches', Icon: IconUser, list: mine },
+    { label: 'Morning ground', Icon: IconSunrise, list: rest.filter(b => b.start_time < '12:00') },
+    { label: 'Evening ground', Icon: IconSunset, list: rest.filter(b => b.start_time >= '12:00') }
   ].filter(g => g.list.length);
 
   if (!active.length) return <p className="card p-6 text-sm text-ink-500">No batches yet. Create the first one.</p>;
