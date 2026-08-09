@@ -202,10 +202,9 @@ function RunScene() {
           ))}
         </g>
 
-        {/* boundary wall */}
-        <rect x="0" y="88" width="420" height="38" fill="#13234a" />
-        <path d="M0 126 H420" stroke="#f5a524" strokeOpacity=".55" strokeWidth="2.5" />
-        <rect x="0" y="126" width="420" height="134" fill="#131f3c" />
+        {/* the ground runs straight up to the stands */}
+        <path d="M0 88 H420" stroke="#f5a524" strokeOpacity=".45" strokeWidth="2" />
+        <rect x="0" y="89" width="420" height="171" fill="#131f3c" />
 
         {/* the circuit, seen from the stands */}
         <ellipse cx={CX} cy={CY} rx="200" ry="60" fill={`url(#${uid}-track)`} />
