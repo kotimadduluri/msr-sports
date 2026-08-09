@@ -1,0 +1,22 @@
+# One-click deploy on Render: https://render.com/docs/blueprint-spec
+# The single service builds the web app and serves site + portal + API,
+# with the SQLite database on a persistent disk and nightly on-disk backups.
+services:
+  - type: web
+    name: msr-sports
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    disk:
+      name: msr-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: DATA_DIR
+        value: /data
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_PHONE
+        sync: false          # set to the owner's mobile number in the dashboard
+      - key: ADMIN_PASSWORD
+        sync: false          # set once; change it from Settings after first login

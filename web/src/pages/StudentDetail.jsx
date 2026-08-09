@@ -1,24 +1,32 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { api, rupees, shortDate, secsToTime, waLink, todayISO } from '../api';
+import { api, rupees, shortDate, secsToTime, waLink, todayISO, monthISO } from '../api';
 import { Loading, Badge, Modal, Field, Stat, useToast, Segmented } from '../components.jsx';
 import { HeatStrip } from '../charts.jsx';
-import { IconChevronLeft, IconPhone, IconWhatsapp, IconRupee, IconPlus } from '../icons.jsx';
+import { IconChevronLeft, IconPhone, IconWhatsapp, IconRupee, IconPlus, IconSpark, IconSettings } from '../icons.jsx';
+import { EVENTS, unitFor, READINESS } from '../events.js';
+import { msg, MsgLang } from '../waTemplates.jsx';
 
-const EVENTS = ['1600m Run', '800m Run', '100m Sprint', 'Long Jump', 'Shot Put (7.26kg)', 'Shot Put (4kg)', 'High Jump', 'Pull-ups'];
+const STATUSES = ['active', 'on-hold', 'dropped', 'passed-out'];
 
 export default function StudentDetail() {
   const { id } = useParams();
   const toast = useToast();
   const [s, setS] = useState(null);
+  const [upi, setUpi] = useState('');
   const [tab, setTab] = useState('overview');
   const [payOpen, setPayOpen] = useState(false);
   const [testOpen, setTestOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [cardOpen, setCardOpen] = useState(false);
+  const [card, setCard] = useState(null);
   const [pay, setPay] = useState({ amount: '', mode: 'cash', invoice_id: '', reference: '' });
   const [test, setTest] = useState({ event: EVENTS[0], value: '', unit: 'sec', date: todayISO() });
+  const [edit, setEdit] = useState({});
 
   const load = useCallback(() => api.get(`/students/${id}`).then(setS).catch(e => toast(e.message, 'error')), [id, toast]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { api.get('/settings').then(a => setUpi(a.upi_id || '')).catch(() => {}); }, []);
 
   if (!s) return <Loading rows={6} />;
 
@@ -45,8 +53,41 @@ export default function StudentDetail() {
     } catch (err) { toast(err.message, 'error'); }
   }
 
-  const reminder = `Namaste ${s.guardian_name || s.name}, this is MSR Sports Academy, Chirala. ` +
-    `Fee balance for ${s.name} (${s.admission_no}) is ${rupees(s.balance)}. Kindly pay at the office or by UPI. Thank you.`;
+  function openEdit() {
+    setEdit({
+      status: s.status, leave_reason: s.leave_reason || '',
+      availability_note: s.availability_note || '',
+      fee_override: s.fee_override ?? '', target_exam: s.target_exam || '',
+      preferred_lang: s.preferred_lang || 'te'
+    });
+    setEditOpen(true);
+  }
+
+  async function saveEdit(e) {
+    e.preventDefault();
+    try {
+      await api.patch(`/students/${s.id}`, {
+        status: edit.status,
+        leave_reason: edit.leave_reason || null,
+        availability_note: edit.availability_note || null,
+        fee_override: edit.fee_override === '' ? null : Number(edit.fee_override),
+        target_exam: edit.target_exam || null,
+        preferred_lang: edit.preferred_lang
+      });
+      toast('Saved');
+      setEditOpen(false); load();
+    } catch (err) { toast(err.message, 'error'); }
+  }
+
+  async function openCard() {
+    setCard(null); setCardOpen(true);
+    try { setCard(await api.get(`/students/${s.id}/progress-card?month=${monthISO()}`)); }
+    catch (err) { toast(err.message, 'error'); setCardOpen(false); }
+  }
+
+  const reminder = () => msg('feeReminder', s, s.balance, null, upi);
+  const fmtVal = (value, unit) => unit === 'sec' ? secsToTime(value) : unit === 'm' ? `${value} m` : value;
+  const fmtTarget = t => t.unit === 'sec' ? `≤ ${secsToTime(t.target)}` : `≥ ${t.target} ${t.unit === 'count' ? '' : t.unit}`;
 
   return (
     <div className="space-y-4">
@@ -62,15 +103,22 @@ export default function StudentDetail() {
               {s.admission_no} · {s.gender === 'F' ? 'Female' : 'Male'} · Joined {shortDate(s.join_date)}
             </p>
             <p className="mt-1 text-sm">{s.course_name || 'No programme'} · {s.batch_name || 'No batch'}</p>
+            {s.availability_note && (
+              <p className="mt-1.5 inline-block rounded-lg bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
+                {s.availability_note}
+              </p>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             <Badge status={s.status} />
             {s.phone && <a href={`tel:${s.phone}`} className="btn-ghost"><IconPhone className="h-[18px] w-[18px]" /> Call</a>}
             {s.balance > 0 && (
-              <a href={waLink(s.guardian_phone || s.phone, reminder)} target="_blank" rel="noreferrer" className="btn-ghost">
+              <a href={waLink(s.guardian_phone || s.phone, reminder())} target="_blank" rel="noreferrer" className="btn-ghost">
                 <IconWhatsapp className="h-[18px] w-[18px] text-emerald-600" /> Remind
               </a>
             )}
+            <button onClick={openCard} className="btn-ghost"><IconSpark className="h-[18px] w-[18px]" /> Progress card</button>
+            <button onClick={openEdit} className="btn-ghost" aria-label="Edit student"><IconSettings className="h-[18px] w-[18px]" /></button>
             <button onClick={() => setPayOpen(true)} className="btn-primary"><IconRupee className="h-[18px] w-[18px]" /> Record payment</button>
           </div>
         </div>
@@ -80,11 +128,35 @@ export default function StudentDetail() {
         <Stat label="Attendance" value={s.attendance_pct === null ? '—' : s.attendance_pct + '%'}
           tone={s.attendance_pct >= 80 ? 'good' : s.attendance_pct >= 60 ? 'warn' : 'bad'} sub="all time" />
         <Stat label="Fee balance" value={rupees(s.balance)} tone={s.balance > 0 ? 'bad' : 'good'}
-          sub={due.length ? `${due.length} bills pending` : 'all clear'} />
+          sub={due.length ? `${due.length} bills pending` : s.fee_override ? `concession ${rupees(s.fee_override)}/mo` : 'all clear'} />
         <Stat label="Height" value={s.height_cm ? `${s.height_cm} cm` : '—'} sub={s.weight_kg ? `${s.weight_kg} kg` : ''} />
         <Stat label="Chest" value={s.chest_cm ? `${s.chest_cm} cm` : '—'}
           sub={s.chest_expanded_cm ? `${s.chest_expanded_cm} cm expanded` : ''} />
       </div>
+
+      {s.readiness?.length > 0 && (
+        <div className="card p-4">
+          <p className="mb-3 font-bold text-ink-900">Where they stand{s.target_exam ? ` — ${s.target_exam}` : ''}</p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {s.readiness.map(r => {
+              const t = r.targets[0];
+              return (
+                <div key={r.event} className="flex items-center justify-between gap-2 rounded-xl bg-ink-50 px-3.5 py-2.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-ink-900">{r.event}</p>
+                    <p className="text-xs text-ink-500">
+                      {fmtVal(r.value, r.unit)} · target {fmtTarget(t)} ({t.exam})
+                    </p>
+                  </div>
+                  <span className={`shrink-0 rounded-lg px-2 py-1 text-2xs font-bold ${READINESS[t.status].cls}`}>
+                    {READINESS[t.status].label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <Segmented value={tab} onChange={setTab}
         options={[['overview', 'Overview'], ['attendance', 'Attendance'], ['fees', 'Fees'], ['performance', 'Performance']]} />
@@ -96,6 +168,10 @@ export default function StudentDetail() {
             ['Guardian', s.guardian_name], ['Guardian phone', s.guardian_phone],
             ['Village', s.village], ['Address', s.address],
             ['Batch timing', s.start_time ? `${s.start_time} – ${s.end_time}` : null],
+            ['Target exam', s.target_exam],
+            ['Monthly fee', s.fee_override ? `${rupees(s.fee_override)} (concession)` : null],
+            ['Message language', { te: 'తెలుగు', en: 'English', hi: 'हिन्दी' }[s.preferred_lang] || 'తెలుగు'],
+            ...(s.status !== 'active' && s.leave_reason ? [['Left because', s.leave_reason]] : []),
             ['Notes', s.notes]
           ].map(([k, v]) => (
             <div key={k}>
@@ -210,7 +286,7 @@ export default function StudentDetail() {
         <form onSubmit={saveTest} className="space-y-3">
           <Field label="Event">
             <select className="input" value={test.event}
-              onChange={e => setTest({ ...test, event: e.target.value, unit: /Run|Sprint/.test(e.target.value) ? 'sec' : /Pull/.test(e.target.value) ? 'count' : 'm' })}>
+              onChange={e => setTest({ ...test, event: e.target.value, unit: unitFor(e.target.value) })}>
               {EVENTS.map(e => <option key={e}>{e}</option>)}
             </select>
           </Field>
@@ -223,6 +299,113 @@ export default function StudentDetail() {
           </Field>
           <button className="btn-primary w-full">Save record</button>
         </form>
+      </Modal>
+
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit student">
+        <form onSubmit={saveEdit} className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Status">
+              <select className="input capitalize" value={edit.status}
+                onChange={e => setEdit({ ...edit, status: e.target.value })}>
+                {STATUSES.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            </Field>
+            <Field label="Message language">
+              <select className="input" value={edit.preferred_lang}
+                onChange={e => setEdit({ ...edit, preferred_lang: e.target.value })}>
+                <option value="te">తెలుగు</option><option value="en">English</option><option value="hi">हिन्दी</option>
+              </select>
+            </Field>
+          </div>
+          {edit.status !== 'active' && (
+            <Field label="Why are they leaving / pausing?">
+              <input className="input" required={s.status === 'active'} placeholder="Moved for college; exam cleared; fees…"
+                value={edit.leave_reason} onChange={e => setEdit({ ...edit, leave_reason: e.target.value })} />
+            </Field>
+          )}
+          <Field label="Availability note (shows on roll call and test day)">
+            <input className="input" placeholder="Knee strain — no running this week"
+              value={edit.availability_note} onChange={e => setEdit({ ...edit, availability_note: e.target.value })} />
+          </Field>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Monthly fee concession (₹, blank = course fee)">
+              <input className="input" inputMode="decimal" value={edit.fee_override}
+                onChange={e => setEdit({ ...edit, fee_override: e.target.value })} />
+            </Field>
+            <Field label="Target exam">
+              <input className="input" placeholder="AP Police Constable" value={edit.target_exam}
+                onChange={e => setEdit({ ...edit, target_exam: e.target.value })} />
+            </Field>
+          </div>
+          <button className="btn-primary w-full">Save changes</button>
+        </form>
+      </Modal>
+
+      <Modal open={cardOpen} onClose={() => setCardOpen(false)} title="Monthly progress card">
+        {!card ? <Loading rows={5} /> : (
+          <div className="space-y-3">
+            <div id="receipt" className="rounded-xl border border-ink-300 p-5 text-sm">
+              <div className="text-center">
+                <p className="text-lg font-extrabold">{card.academy?.academy_name || 'MSR Sports Academy'}</p>
+                <p className="text-xs text-ink-500">Monthly progress — {card.month}</p>
+              </div>
+              <hr className="my-3" />
+              <div className="grid grid-cols-2 gap-2">
+                <p className="text-ink-500">Student</p><p className="text-right font-semibold">{card.student.name}</p>
+                <p className="text-ink-500">Admission no</p><p className="text-right font-mono">{card.student.admission_no}</p>
+                <p className="text-ink-500">Programme</p><p className="text-right">{card.student.course_name || '—'}</p>
+                <p className="text-ink-500">Attendance</p>
+                <p className="text-right font-semibold">
+                  {card.attendance.pct === null ? '—' : `${card.attendance.pct}%`} ({card.attendance.present}/{card.attendance.total})
+                </p>
+              </div>
+              {card.events.length > 0 && (
+                <>
+                  <hr className="my-3" />
+                  <div className="space-y-2">
+                    {card.events.map(e => {
+                      const t = e.targets[0];
+                      const improved = e.delta !== null && (e.unit === 'sec' ? e.delta < 0 : e.delta > 0);
+                      return (
+                        <div key={e.event} className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="font-semibold">{e.event}</p>
+                            <p className="text-xs text-ink-500">
+                              {t ? `target ${fmtTarget(t)} · ${t.exam}` : 'no cut-off set'}
+                              {e.delta !== null && (
+                                <span className={improved ? ' text-good' : ' text-ink-500'}>
+                                  {' '}· {improved ? 'improved' : 'changed'} {Math.abs(e.delta)}{e.unit === 'sec' ? 's' : ` ${e.unit}`}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {t && <span className={`rounded-lg px-2 py-0.5 text-2xs font-bold ${READINESS[t.status].cls}`}>{READINESS[t.status].label}</span>}
+                            <p className="font-bold tabular-nums">{fmtVal(e.value, e.unit)}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+              <hr className="my-3" />
+              <div className="flex justify-between text-base font-bold">
+                <span>Fee balance</span><span>{card.balance > 0 ? rupees(card.balance) : 'All clear'}</span>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <MsgLang />
+              <div className="flex gap-2">
+                <a className="btn-ghost" target="_blank" rel="noreferrer"
+                  href={waLink(card.student.guardian_phone || card.student.phone, msg('progressCard', card))}>
+                  <IconWhatsapp className="h-[18px] w-[18px] text-emerald-600" /> WhatsApp
+                </a>
+                <button onClick={() => window.print()} className="btn-primary">Print</button>
+              </div>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

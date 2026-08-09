@@ -3,21 +3,25 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { getUser, clearSession, isDemo } from '../api';
 import {
   Logo, IconDashboard, IconStudents, IconCheck, IconRupee, IconRun,
-  IconCalendar, IconPhone, IconSettings, IconLogout, IconMenu, IconClose
+  IconCalendar, IconPhone, IconSettings, IconLogout, IconMenu, IconClose,
+  IconTimer, IconWallet, IconTrophy
 } from '../icons.jsx';
 
 const NAV = [
   { to: '/app', end: true, label: 'Dashboard', Icon: IconDashboard },
   { to: '/app/students', label: 'Students', Icon: IconStudents },
   { to: '/app/attendance', label: 'Attendance', Icon: IconCheck },
+  { to: '/app/testday', label: 'Test day', Icon: IconTimer },
   { to: '/app/fees', label: 'Fees', Icon: IconRupee },
+  { to: '/app/expenses', label: 'Expenses', Icon: IconWallet },
   { to: '/app/performance', label: 'Performance', Icon: IconRun },
+  { to: '/app/academy', label: 'Academy', Icon: IconTrophy },
   { to: '/app/batches', label: 'Batches', Icon: IconCalendar },
   { to: '/app/enquiries', label: 'Enquiries', Icon: IconPhone },
   { to: '/app/settings', label: 'Settings', Icon: IconSettings }
 ];
 /* what a coach actually needs within thumb reach */
-const TABS = [NAV[0], NAV[1], NAV[2], NAV[3], NAV[6]];
+const TABS = [NAV[0], NAV[2], NAV[3], NAV[4], NAV[1]];
 
 export default function Layout() {
   const user = getUser();

@@ -137,6 +137,38 @@ export default {
     }
   },
 
+  wall: {
+    kicker: 'Results',
+    title: 'Selected from this ground',
+    sub: 'Students who trained here and now wear the uniform. Your name goes on this wall next.',
+    updates: 'Recruitment updates'
+  },
+
+  check: {
+    navLabel: 'My progress',
+    title: 'Check your progress',
+    sub: 'Enter the admission number printed on your receipt, and your date of birth.',
+    admission: 'Admission number',
+    admissionPh: 'MSR20260001',
+    dob: 'Date of birth',
+    submit: 'Show my record',
+    checking: 'Checking…',
+    attendance: 'Attendance',
+    thisMonth: 'this month',
+    overall: 'overall',
+    batch: 'Batch',
+    timings: 'Your timings',
+    target: 'target',
+    ready: 'Ready',
+    close: 'Close',
+    needsWork: 'Needs work',
+    feeDue: 'Fee balance',
+    allClear: 'All clear',
+    payUpi: 'Pay by UPI',
+    receipts: 'Recent receipts',
+    back: 'Back to website'
+  },
+
   footer: {
     place: 'Chirala · Andhra Pradesh',
     blurb: 'Ground training and written-exam coaching for police, army, SSC and railway recruitment — one campus, one preparation.',

@@ -5,7 +5,7 @@ import {
   Globe, Inbox, IndianRupee, LayoutDashboard, LogOut, Mail, MapPin, Medal, Menu,
   MessageCircle, MessageSquare, Navigation, Phone, Plus, Ruler, Search,
   Settings, Shield, ShieldCheck, Sparkles, Sunrise, Sunset, Target, Timer,
-  TrainFront, TrendingUp, TriangleAlert, Trophy, User, Users, X
+  TrainFront, TrendingUp, TriangleAlert, Trophy, User, Users, Wallet, X
 } from 'lucide-react';
 
 /* Every icon in the product comes from lucide.dev, wrapped once here so the
@@ -59,6 +59,7 @@ export const IconTrain = wrap(TrainFront);
 export const IconUser = wrap(User);
 export const IconMessage = wrap(MessageSquare);
 export const IconGlobe = wrap(Globe);
+export const IconWallet = wrap(Wallet);
 export const IconDirections = wrap(Navigation);
 
 /* the mark — a crest with the MSR monogram, gold star and track lines.

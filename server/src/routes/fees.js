@@ -20,10 +20,11 @@ r.post('/generate', allow(...OFFICE), (req, res) => {
   const period = req.body?.period || today().slice(0, 7);
   const dueDay = String(req.body?.due_day || 10).padStart(2, '0');
   const due_date = `${period}-${dueDay}`;
+  /* fee_override is the negotiated per-student fee (concession / scholarship) */
   const students = db.prepare(`
-    SELECT s.id, s.name, c.fee_amount, c.fee_cycle, c.name AS course_name
+    SELECT s.id, s.name, COALESCE(s.fee_override, c.fee_amount) AS fee_amount, c.fee_cycle, c.name AS course_name
     FROM students s JOIN courses c ON c.id = s.course_id
-    WHERE s.status = 'active' AND c.fee_amount > 0`).all();
+    WHERE s.status = 'active' AND COALESCE(s.fee_override, c.fee_amount) > 0`).all();
   const stmt = db.prepare(`INSERT OR IGNORE INTO invoices (student_id, period, description, amount, due_date)
     VALUES (?,?,?,?,?)`);
   let created = 0;

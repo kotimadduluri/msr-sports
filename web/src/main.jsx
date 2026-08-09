@@ -12,6 +12,7 @@ const Router = isDemo ? HashRouter : BrowserRouter;
 import { ToastProvider } from './components.jsx';
 
 import Site from './pages/Site.jsx';
+import SelfCheck from './pages/site/SelfCheck.jsx';
 import Login from './pages/Login.jsx';
 import Layout from './pages/Layout.jsx';
 import Dashboard from './pages/Dashboard.jsx';
@@ -22,6 +23,9 @@ import Fees from './pages/Fees.jsx';
 import Batches from './pages/Batches.jsx';
 import Enquiries from './pages/Enquiries.jsx';
 import Performance from './pages/Performance.jsx';
+import TestDay from './pages/TestDay.jsx';
+import Expenses from './pages/Expenses.jsx';
+import Academy from './pages/Academy.jsx';
 import Settings from './pages/Settings.jsx';
 
 function Protected() {
@@ -40,6 +44,7 @@ createRoot(document.getElementById('root')).render(
       <Router>
         <Routes>
           <Route path="/" element={<Site />} />
+          <Route path="/check" element={<SelfCheck />} />
           <Route path="/login" element={<Login />} />
           <Route element={<Protected />}>
             <Route path="/app" element={<Layout />}>
@@ -51,6 +56,9 @@ createRoot(document.getElementById('root')).render(
               <Route path="batches" element={<Batches />} />
               <Route path="enquiries" element={<Enquiries />} />
               <Route path="performance" element={<Performance />} />
+              <Route path="testday" element={<TestDay />} />
+              <Route path="expenses" element={<Expenses />} />
+              <Route path="academy" element={<Academy />} />
               <Route path="settings" element={<Settings />} />
             </Route>
           </Route>

@@ -13,7 +13,7 @@ r.get('/sheet', allow(...TRAINING), (req, res) => {
   const batch_id = req.query.batch_id;
   if (!batch_id) return res.status(400).json({ error: 'Choose a batch' });
   const rows = db.prepare(`
-    SELECT s.id AS student_id, s.admission_no, s.name, s.gender, s.phone,
+    SELECT s.id AS student_id, s.admission_no, s.name, s.gender, s.phone, s.availability_note,
            a.status, a.id AS attendance_id
     FROM students s
     LEFT JOIN attendance a ON a.student_id = s.id AND a.date = ?

@@ -3,6 +3,28 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { api, todayISO, monthISO, waLink } from '../api';
 import { Loading, Empty, useToast, PageHead, Segmented } from '../components.jsx';
 import { IconCheck, IconWhatsapp, IconAlert } from '../icons.jsx';
+import { msg, MsgLang } from '../waTemplates.jsx';
+
+/* Offline tolerance: the 5:30 AM ground has patchy signal. A roll call that
+   fails to reach the server is queued on the phone and replayed the moment
+   the network returns (or next time the screen opens). */
+const QUEUE_KEY = 'msr.pendingAttendance';
+const readQueue = () => { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch { return []; } };
+const writeQueue = list => localStorage.setItem(QUEUE_KEY, JSON.stringify(list));
+const isNetworkError = e => e instanceof TypeError || /fetch|network|load failed/i.test(e?.message || '');
+
+async function flushQueue() {
+  const queue = readQueue();
+  if (!queue.length) return 0;
+  let sent = 0;
+  const remaining = [];
+  for (const item of queue) {
+    try { await api.post('/attendance/mark', item); sent++; }
+    catch (e) { if (isNetworkError(e)) remaining.push(item); /* real errors: drop, they'd never succeed */ }
+  }
+  writeQueue(remaining);
+  return sent;
+}
 
 /* Four states, always in the same order, always the same colour.
    Buttons are 44px so they work with a thumb on a cold morning. */
@@ -26,6 +48,20 @@ export default function Attendance() {
   const [view, setView] = useState('rollcall');
   const [monthly, setMonthly] = useState(null);
   const [absentees, setAbsentees] = useState(null);
+  const [pending, setPending] = useState(() => readQueue().length);
+  const [session, setSession] = useState('');
+  const [sessionSaved, setSessionSaved] = useState(false);
+
+  /* replay any queued roll calls when we come back online */
+  useEffect(() => {
+    const flush = () => flushQueue().then(n => {
+      setPending(readQueue().length);
+      if (n) toast(`Synced ${n} saved roll call${n > 1 ? 's' : ''} from this phone`);
+    });
+    flush();
+    window.addEventListener('online', flush);
+    return () => window.removeEventListener('online', flush);
+  }, [toast]);
 
   useEffect(() => {
     api.get('/batches').then(bs => {
@@ -43,6 +79,10 @@ export default function Attendance() {
         setMarks(Object.fromEntries(d.rows.map(r => [r.student_id, r.status || 'present'])));
       })
       .catch(e => toast(e.message, 'error'));
+    setSession(''); setSessionSaved(false);
+    api.get(`/sessions?batch_id=${batchId}&date=${date}`)
+      .then(sn => { if (sn?.note) { setSession(sn.note); setSessionSaved(true); } })
+      .catch(() => {});
   }, [batchId, date, toast]);
 
   useEffect(() => { if (view === 'rollcall') loadSheet(); }, [view, loadSheet]);
@@ -59,13 +99,31 @@ export default function Attendance() {
 
   async function save() {
     setSaving(true);
+    const payload = {
+      batch_id: Number(batchId), date,
+      entries: Object.entries(marks).map(([student_id, status]) => ({ student_id: Number(student_id), status }))
+    };
     try {
-      const entries = Object.entries(marks).map(([student_id, status]) => ({ student_id: Number(student_id), status }));
-      const res = await api.post('/attendance/mark', { batch_id: Number(batchId), date, entries });
+      const res = await api.post('/attendance/mark', payload);
       toast(`Saved — ${res.saved} students marked`);
       setDirty(false);
-    } catch (e) { toast(e.message, 'error'); }
+    } catch (e) {
+      if (isNetworkError(e)) {
+        writeQueue([...readQueue().filter(x => !(x.batch_id === payload.batch_id && x.date === payload.date)), payload]);
+        setPending(readQueue().length);
+        setDirty(false);
+        toast('No signal — saved on this phone, will sync when the network returns');
+      } else toast(e.message, 'error');
+    }
     finally { setSaving(false); }
+  }
+
+  async function saveSession() {
+    try {
+      await api.post('/sessions', { batch_id: Number(batchId), date, note: session });
+      setSessionSaved(true);
+      toast('Session note saved');
+    } catch (e) { toast(e.message, 'error'); }
   }
 
   const mark = (id, k) => { setMarks(m => ({ ...m, [id]: k })); setDirty(true); };
@@ -76,6 +134,13 @@ export default function Attendance() {
   return (
     <div className="space-y-4">
       <PageHead title="Attendance" sub="Tap a status against each name, then save once for the whole ground" />
+
+      {pending > 0 && (
+        <p className="flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800">
+          <IconAlert className="h-4 w-4 shrink-0" />
+          {pending} roll call{pending > 1 ? 's' : ''} saved on this phone — will sync when the network returns
+        </p>
+      )}
 
       <Segmented value={view} onChange={setView}
         options={[['rollcall', 'Roll call'], ['monthly', 'Month view'], ['absentees', 'Missing students']]} />
@@ -123,7 +188,14 @@ export default function Attendance() {
                   <p className="truncate text-[15px] font-semibold text-ink-900">
                     <span className="mr-1.5 text-2xs font-medium tabular-nums text-ink-400">{i + 1}</span>{r.name}
                   </p>
-                  <p className="font-mono text-2xs text-ink-400">{r.admission_no}</p>
+                  <p className="flex items-center gap-1.5 text-2xs text-ink-400">
+                    <span className="font-mono">{r.admission_no}</span>
+                    {r.availability_note && (
+                      <span className="truncate rounded-md bg-amber-50 px-1.5 py-0.5 font-semibold text-amber-700">
+                        {r.availability_note}
+                      </span>
+                    )}
+                  </p>
                 </div>
                 <div className="flex shrink-0 gap-1" role="group" aria-label={`Attendance for ${r.name}`}>
                   {STATUSES.map(s => (
@@ -143,6 +215,16 @@ export default function Attendance() {
             <IconCheck className="h-[18px] w-[18px]" />
             {saving ? 'Saving…' : dirty ? `Save attendance for ${rows.length} students` : 'All changes saved'}
           </button>
+
+          {/* what the session actually was — so a substitute coach can pick up tomorrow */}
+          <div className="card flex gap-2 p-3">
+            <input className="input flex-1" placeholder="Session note — e.g. 400m repeats ×6, shot put drills"
+              value={session} onChange={e => { setSession(e.target.value); setSessionSaved(false); }} />
+            <button onClick={saveSession} disabled={!session.trim() || sessionSaved}
+              className={sessionSaved ? 'btn-quiet' : 'btn-ghost'}>
+              {sessionSaved ? 'Noted ✓' : 'Save note'}
+            </button>
+          </div>
         </>
       ))}
 
@@ -179,10 +261,13 @@ export default function Attendance() {
           hint="No student has missed three or more sessions this week." />
       ) : (
         <>
-          <p className="flex items-start gap-2 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            <IconAlert className="mt-px h-4 w-4 shrink-0" />
-            These students missed three or more sessions this week. A message to the parent usually brings them back.
-          </p>
+          <div className="flex items-start justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3">
+            <p className="flex items-start gap-2 text-sm text-amber-800">
+              <IconAlert className="mt-px h-4 w-4 shrink-0" />
+              These students missed three or more sessions this week. A message to the parent usually brings them back.
+            </p>
+            <MsgLang className="shrink-0" />
+          </div>
           <ul className="card divide-y divide-ink-100">
             {absentees.map(a => (
               <li key={a.id} className="flex items-center justify-between gap-3 px-4 py-3">
@@ -191,8 +276,7 @@ export default function Attendance() {
                   <p className="truncate text-xs text-ink-500">{a.batch_name} · {a.absents} absents this week</p>
                 </Link>
                 <a className="btn-ghost btn-sm shrink-0" target="_blank" rel="noreferrer"
-                  href={waLink(a.guardian_phone || a.phone,
-                    `Namaste, this is MSR Sports Academy, Chirala. ${a.name} has missed ${a.absents} training sessions this week. Please ensure regular attendance.`)}>
+                  href={waLink(a.guardian_phone || a.phone, msg('absence', a, a.absents))}>
                   <IconWhatsapp className="h-4 w-4 text-emerald-600" /> Message
                 </a>
               </li>

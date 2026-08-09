@@ -1,8 +1,18 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { api, rupees, shortDate, monthISO, waLink } from '../api';
+import { api, rupees, shortDate, monthISO, todayISO, waLink } from '../api';
 import { Loading, Empty, Badge, Modal, Field, useToast, Stat, PageHead, Segmented } from '../components.jsx';
-import { IconDownload, IconWhatsapp, IconRupee, IconPlus } from '../icons.jsx';
+import { IconDownload, IconWhatsapp, IconRupee, IconPlus, IconCircleCheck } from '../icons.jsx';
+import { msg, MsgLang } from '../waTemplates.jsx';
+
+/* 30/60/90 dues ageing: how long past due, bucketed the way the owner chases */
+const ageDays = due => Math.max(0, Math.round((new Date(todayISO()) - new Date(due)) / 86400000));
+const AGE_BUCKETS = [
+  { key: '90', label: 'Over 90 days', min: 91 },
+  { key: '60', label: '31–90 days', min: 31 },
+  { key: '30', label: 'Up to 30 days', min: 0 }
+];
+const bucketOf = i => AGE_BUCKETS.find(b => ageDays(i.due_date) >= b.min);
 
 export default function Fees() {
   const toast = useToast();
@@ -14,6 +24,11 @@ export default function Fees() {
   const [period, setPeriod] = useState(monthISO());
   const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState(null);
+  const [remindOpen, setRemindOpen] = useState(false);
+  const [reminded, setReminded] = useState(() => new Set());
+  const [upi, setUpi] = useState('');
+
+  useEffect(() => { api.get('/settings').then(a => setUpi(a.upi_id || '')).catch(() => {}); }, []);
 
   const loadInvoices = useCallback(() => {
     const p = new URLSearchParams();
@@ -78,6 +93,24 @@ export default function Fees() {
             </div>
           )}
 
+          {tab === 'due' && invoices?.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              {AGE_BUCKETS.map(b => {
+                const list = invoices.filter(i => bucketOf(i) === b);
+                if (!list.length) return null;
+                return (
+                  <span key={b.key} className={`rounded-lg px-2.5 py-1 text-2xs font-bold ${
+                    b.key === '90' ? 'bg-rose-50 text-rose-700' : b.key === '60' ? 'bg-amber-50 text-amber-700' : 'bg-ink-100 text-ink-600'}`}>
+                    {b.label} · {list.length} bills · {rupees(list.reduce((a, i) => a + i.balance, 0))}
+                  </span>
+                );
+              })}
+              <button onClick={() => { setReminded(new Set()); setRemindOpen(true); }} className="btn-primary btn-sm ml-auto">
+                <IconWhatsapp className="h-4 w-4" /> Remind all
+              </button>
+            </div>
+          )}
+
           {!invoices ? <Loading rows={6} /> : invoices.length === 0 ? (
             <Empty title={tab === 'due' ? 'No overdue fees' : 'No bills for this month yet'}
               hint={tab === 'due' ? 'Everyone is up to date.' : 'Use "Generate monthly bills" to create them.'} />
@@ -91,6 +124,11 @@ export default function Fees() {
                     </Link>
                     <p className="truncate text-xs text-ink-500">
                       {i.period} · {i.batch_name || 'No batch'} · due {shortDate(i.due_date)}
+                      {tab === 'due' && ageDays(i.due_date) > 0 && (
+                        <span className={ageDays(i.due_date) > 90 ? ' font-semibold text-rose-600' : ageDays(i.due_date) > 30 ? ' font-semibold text-amber-600' : ''}>
+                          {' '}· {ageDays(i.due_date)}d late
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
@@ -100,7 +138,7 @@ export default function Fees() {
                     </div>
                     <a className="btn-ghost btn-sm hidden sm:inline-flex" target="_blank" rel="noreferrer"
                       href={waLink(i.guardian_phone || i.phone,
-                        `Namaste, MSR Sports Academy Chirala. Fee of ${rupees(i.balance)} for ${i.student_name} (${i.period}) is pending. Kindly pay at the office or by UPI. Thank you.`)}>
+                        msg('feeReminder', { name: i.student_name, admission_no: i.admission_no }, i.balance, i.period, upi))}>
                       <IconWhatsapp className="h-4 w-4 text-emerald-600" /> Remind
                     </a>
                   </div>
@@ -127,6 +165,41 @@ export default function Fees() {
           ))}
         </div>
       ))}
+
+      <Modal open={remindOpen} onClose={() => setRemindOpen(false)} title="Remind every overdue family">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm text-ink-600">Tap each family — WhatsApp opens with the message ready to send.</p>
+            <MsgLang />
+          </div>
+          <div className="max-h-80 space-y-1.5 overflow-y-auto">
+            {(invoices || []).filter(i => i.balance > 0).map(i => (
+              <div key={i.id} className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 ${
+                reminded.has(i.id) ? 'bg-emerald-50' : 'bg-ink-50'}`}>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-ink-900">{i.student_name}</p>
+                  <p className="text-2xs text-ink-500">{rupees(i.balance)} · {ageDays(i.due_date)}d late</p>
+                </div>
+                {reminded.has(i.id) ? (
+                  <span className="flex items-center gap-1 text-2xs font-bold text-emerald-700">
+                    <IconCircleCheck className="h-4 w-4" /> Sent
+                  </span>
+                ) : (
+                  <a className="btn-ghost btn-sm shrink-0" target="_blank" rel="noreferrer"
+                    onClick={() => setReminded(prev => new Set(prev).add(i.id))}
+                    href={waLink(i.guardian_phone || i.phone,
+                      msg('feeReminder', { name: i.student_name, admission_no: i.admission_no }, i.balance, i.period, upi))}>
+                    <IconWhatsapp className="h-4 w-4 text-emerald-600" /> Open
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-xs text-ink-500">
+            {reminded.size} of {(invoices || []).filter(i => i.balance > 0).length} reminded
+          </p>
+        </div>
+      </Modal>
 
       <Modal open={genOpen} onClose={() => setGenOpen(false)} title="Generate monthly fee bills">
         <div className="space-y-3">

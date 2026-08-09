@@ -5,15 +5,32 @@ import { sign, auth, allow, ADMIN } from '../auth.js';
 
 const r = Router();
 
+/* Brute-force guard: 10 failed logins per IP per 15 minutes. */
+const failures = new Map(); // ip -> { count, since }
+const FAIL_LIMIT = 10, FAIL_WINDOW_MS = 15 * 60 * 1000;
+function throttled(ip) {
+  const a = failures.get(ip);
+  if (!a || Date.now() - a.since > FAIL_WINDOW_MS) return false;
+  return a.count >= FAIL_LIMIT;
+}
+function recordFailure(ip) {
+  const a = failures.get(ip);
+  if (!a || Date.now() - a.since > FAIL_WINDOW_MS) failures.set(ip, { count: 1, since: Date.now() });
+  else a.count += 1;
+}
+
 r.post('/login', (req, res) => {
+  if (throttled(req.ip)) return res.status(429).json({ error: 'Too many attempts — wait a few minutes and try again' });
   const { username, password } = req.body || {};
   if (!username || !password) return res.status(400).json({ error: 'Enter username and password' });
   const user = db
     .prepare('SELECT * FROM users WHERE (phone = ? OR email = ?) AND active = 1')
     .get(String(username).trim(), String(username).trim().toLowerCase());
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    recordFailure(req.ip);
     return res.status(401).json({ error: 'Wrong username or password' });
   }
+  failures.delete(req.ip);
   res.json({
     token: sign(user),
     user: { id: user.id, name: user.name, role: user.role, phone: user.phone, email: user.email }

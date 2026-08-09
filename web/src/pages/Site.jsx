@@ -6,6 +6,7 @@ import { LocaleProvider, useLocale, useT, LANGS } from '../i18n/index.jsx';
 import Hero from './site/Hero.jsx';
 import ScrollLink from './site/ScrollLink.jsx';
 import { Programmes, WhyMsr, TrainingDay, Steps } from './site/Sections.jsx';
+import Wall from './site/Wall.jsx';
 import Join from './site/Join.jsx';
 import { ACADEMY, FALLBACK } from './site/content.js';
 
@@ -49,6 +50,7 @@ function Footer() {
             {NAV_IDS.map(id => (
               <li key={id}><ScrollLink to={id} className="transition hover:text-white">{navLabel(L, id)}</ScrollLink></li>
             ))}
+            <li><Link to="/check" className="transition hover:text-white">{L.check.navLabel}</Link></li>
             <li><Link to="/login" className="transition hover:text-white">{L.actions.staffLogin}</Link></li>
           </ul>
         </nav>
@@ -105,6 +107,7 @@ function SitePage() {
 
           <nav className="hidden items-center gap-7 md:flex">
             {NAV_IDS.map(id => <ScrollLink key={id} to={id} className={link}>{navLabel(L, id)}</ScrollLink>)}
+            <Link to="/check" className={link}>{L.check.navLabel}</Link>
           </nav>
 
           <div className="flex items-center gap-2">
@@ -122,6 +125,7 @@ function SitePage() {
               <ScrollLink key={id} to={id} onClick={() => setMenu(false)}
                 className="block rounded-lg px-2 py-3 text-sm font-semibold text-ink-700 hover:bg-ink-50">{navLabel(L, id)}</ScrollLink>
             ))}
+            <Link to="/check" className="block rounded-lg px-2 py-3 text-sm font-semibold text-ink-700 hover:bg-ink-50">{L.check.navLabel}</Link>
             <Link to="/login" className="block rounded-lg px-2 py-3 text-sm font-semibold text-ink-500">{L.actions.staffLogin}</Link>
             <div className="px-2 pb-1 pt-2"><LangPicker /></div>
           </div>
@@ -131,6 +135,7 @@ function SitePage() {
       <Hero />
       <Programmes list={list} />
       <WhyMsr />
+      <Wall />
       <TrainingDay />
       <Steps />
       <Join courses={list} />

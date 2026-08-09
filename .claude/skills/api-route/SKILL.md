@@ -21,7 +21,7 @@ r.post('/courses', auth, allow(...OFFICE), (req, res) => { ... });
 ```
 **Never put `r.use(auth)` in a router mounted at a broad prefix.** `catalog.js` is mounted at `/api`; its original `r.use(auth)` ran for every `/api/*` request passing through and broke the public website form at `/api/enquiries/public` with "Not signed in". Routers mounted at their own narrow prefix (e.g. `fees.js` at `/api/fees`) may use `r.use(auth)` — but per-route is the house style for anything new.
 
-Public endpoints (no `auth`) exist only in `enquiries.js` — keep it that way.
+Public endpoints (no `auth`) live only in `enquiries.js` (the enquiry form) and `routes/public.js` (mounted at `/api/public` — website success wall, notices, and the rate-limited student self-check). Any new unauthenticated route goes in `public.js`, never elsewhere, and must not leak phone numbers or money.
 
 ## better-sqlite3 rules
 - **Never mix positional and named parameters in one statement** (trap §8.2): `.all(month, { batch_id })` throws. Pick `?` + `.run(a, b)` OR `@name` + `.run({ a, b })` per statement. See the `WHERE`-builder pattern in `fees.js` `GET /invoices` for the named style.
@@ -30,6 +30,9 @@ Public endpoints (no `auth`) exist only in `enquiries.js` — keep it that way.
 
 ## Invoice status is derived
 Never set `invoices.status` by hand except `'waived'`. After any payment insert/delete or invoice amount change, call `refreshInvoiceStatus(invoiceId)` (defined in `server/src/routes/fees.js`) — it recomputes unpaid/partial/paid from summed payments. Also: any "overdue" aggregate must span **all periods**, not just the current month (trap §8.5).
+
+## Cut-off verdicts
+Anything that judges a result against an exam cut-off (ready / borderline / at-risk) must use `server/src/readiness.js` (`judge()`); its demo mirror lives near the top of `web/src/mockApi.js`. Never re-implement the comparison — `sec` qualifies at-or-under, `m`/`count` at-or-over, borderline is within 10%.
 
 ## Errors and responses
 Validate and return `res.status(400).json({ error: '...' })` with a plain, specific message; `404` `{ error: 'Not found' }`; created rows return `res.status(201).json({ id: info.lastInsertRowid })`.

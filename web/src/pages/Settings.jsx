@@ -10,11 +10,22 @@ export default function Settings() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', password: '', role: 'staff' });
   const [pw, setPw] = useState({ current: '', next: '' });
+  const [academy, setAcademy] = useState(null);
+  const [savingAcademy, setSavingAcademy] = useState(false);
 
   const load = useCallback(() => {
     api.get('/auth/users').then(setUsers).catch(() => setUsers([]));
+    api.get('/settings').then(setAcademy).catch(() => setAcademy({}));
   }, []);
   useEffect(load, [load]);
+
+  async function saveAcademy(e) {
+    e.preventDefault();
+    setSavingAcademy(true);
+    try { await api.patch('/settings', academy); toast('Academy details saved'); }
+    catch (err) { toast(err.message, 'error'); }
+    finally { setSavingAcademy(false); }
+  }
 
   async function addUser(e) {
     e.preventDefault();
@@ -40,7 +51,38 @@ export default function Settings() {
 
   return (
     <div className="space-y-4">
-      <PageHead title="Settings" sub="Logins, passwords and backups" />
+      <PageHead title="Settings" sub="Academy details, logins, passwords and backups" />
+
+      {me?.role === 'admin' && academy && (
+        <div className="card p-5">
+          <h2 className="font-bold">Academy details</h2>
+          <p className="mt-1 text-sm text-ink-500">
+            Printed on every receipt and progress card. The UPI ID goes into fee reminders and the
+            student self-check page so families can pay from their phone.
+          </p>
+          <form onSubmit={saveAcademy} className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Field label="Academy name">
+              <input className="input" value={academy.academy_name || ''}
+                onChange={e => setAcademy({ ...academy, academy_name: e.target.value })} />
+            </Field>
+            <Field label="Office phone">
+              <input className="input" inputMode="tel" value={academy.phone || ''}
+                onChange={e => setAcademy({ ...academy, phone: e.target.value })} />
+            </Field>
+            <Field label="Address">
+              <input className="input" value={academy.address || ''}
+                onChange={e => setAcademy({ ...academy, address: e.target.value })} />
+            </Field>
+            <Field label="UPI ID (for fee payments)">
+              <input className="input" placeholder="academy@upi" value={academy.upi_id || ''}
+                onChange={e => setAcademy({ ...academy, upi_id: e.target.value })} />
+            </Field>
+            <div className="sm:col-span-2">
+              <button className="btn-primary" disabled={savingAcademy}>{savingAcademy ? 'Saving…' : 'Save details'}</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <div className="card p-5">
         <h2 className="font-bold">Change my password</h2>
@@ -90,9 +132,16 @@ export default function Settings() {
 
       <div className="card p-5">
         <h2 className="font-bold">Data backup</h2>
-        <p className="mt-1 text-sm text-ink-500">Download a spreadsheet copy of everything. Keep one every month.</p>
+        <p className="mt-1 text-sm text-ink-500">
+          The server keeps its own nightly backups. Download a full copy of the database once a week
+          and keep it somewhere safe — plus spreadsheet copies for the accountant.
+        </p>
         <div className="mt-3 flex flex-wrap gap-2">
-          {['students', 'invoices', 'payments', 'enquiries'].map(k => (
+          {me?.role === 'admin' && (
+            <button onClick={() => api.download('/admin/backup', `msr-backup-${new Date().toISOString().slice(0, 10)}.db`)}
+              className="btn-primary"><IconDownload className="h-4 w-4" /> Full database backup</button>
+          )}
+          {['students', 'invoices', 'payments', 'enquiries', 'expenses', 'selections'].map(k => (
             <button key={k} onClick={() => api.download(`/reports/export/${k}`, `msr-${k}.csv`)} className="btn-ghost capitalize"><IconDownload className="h-4 w-4" />{k}</button>
           ))}
         </div>

@@ -86,6 +86,15 @@ export default function Dashboard() {
           </header>
           <p className="mb-3 text-sm text-ink-500">Money actually received each month.</p>
           <Columns data={collection} format={rupees} />
+          {d.fees.spent_this_month !== undefined && (
+            <p className="mt-3 border-t border-ink-100 pt-3 text-sm text-ink-600">
+              This month: collected <strong>{rupees(d.fees.collected_this_month)}</strong> · spent{' '}
+              <Link to="/app/expenses" className="font-semibold text-msr-700 hover:underline">{rupees(d.fees.spent_this_month)}</Link> ·{' '}
+              <span className={`font-bold ${d.fees.profit_this_month >= 0 ? 'text-good' : 'text-critical'}`}>
+                {d.fees.profit_this_month >= 0 ? 'profit' : 'loss'} {rupees(Math.abs(d.fees.profit_this_month))}
+              </span>
+            </p>
+          )}
         </section>
       </div>
 

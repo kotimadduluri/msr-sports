@@ -151,6 +151,18 @@ Follow these; they are why the UI looks like one product.
   system fonts — never add CDN webfonts.
 - **Touch** — `.btn` is min 44px tall. Keep it. This app is used outdoors at
   5:30 AM on a phone.
+- **Cut-offs & readiness** — every "ready / close / needs work" verdict comes
+  from `server/src/readiness.js` (mirrored in `mockApi.js`) against the
+  `benchmarks` table, editable in the portal (Academy → Cut-offs). Seeded
+  values are training defaults, not authoritative recruitment data. Shared
+  event list + verdict colours live in `web/src/events.js`.
+- **WhatsApp messages** — all prefilled parent/student messages come from
+  `web/src/waTemplates.jsx` (Telugu default, English/Hindi via the `MsgLang`
+  toggle). Never inline an English-only template in a page.
+- **Deployment** — `DEPLOY.md`: one Docker service (root `Dockerfile`,
+  `render.yaml`) serves API + site + portal; SQLite on a persistent disk
+  with nightly backups (`server/src/backup.js`) plus a full-database download
+  in Settings. First boot creates the admin from `ADMIN_PHONE`/`ADMIN_PASSWORD`.
 - **Loading** — skeletons (`<Loading rows={n} />`), not spinners.
 - **Charts are hand-built SVG** in `charts.jsx`. Recharts was removed: it cost
   ~100KB gzipped and fought the design spec. Rules if you add one — 2px lines,

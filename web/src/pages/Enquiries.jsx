@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { api, shortDate, waLink } from '../api';
 import { Loading, Empty, Badge, Modal, Field, useToast, PageHead, Segmented } from '../components.jsx';
 import { IconDownload, IconPlus, IconPhone, IconWhatsapp, IconInbox } from '../icons.jsx';
+import { msg, MsgLang } from '../waTemplates.jsx';
 
 const STATUSES = ['new', 'contacted', 'visited', 'joined', 'lost'];
 
@@ -46,8 +47,11 @@ export default function Enquiries() {
           </button>
         </>} />
 
-      <Segmented value={filter} onChange={setFilter}
-        options={[['', 'All'], ...STATUSES.map(s => [s, s[0].toUpperCase() + s.slice(1)])]} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Segmented value={filter} onChange={setFilter}
+          options={[['', 'All'], ...STATUSES.map(s => [s, s[0].toUpperCase() + s.slice(1)])]} />
+        <MsgLang />
+      </div>
 
       {!items ? <Loading rows={5} /> : items.length === 0 ? (
         <Empty icon={<IconInbox className="h-6 w-6" />} title="Nothing here yet"
@@ -73,7 +77,7 @@ export default function Enquiries() {
                       <IconPhone className="h-4 w-4" /> Call
                     </a>
                     <a target="_blank" rel="noreferrer" className="btn-ghost btn-sm"
-                      href={waLink(e.phone, `Namaste ${e.name}, this is MSR Sports Academy, Chirala. Thank you for your enquiry about ${e.interest || 'our training'}. Our batches start at 5:30 AM daily. Shall we schedule a visit?`)}>
+                      href={waLink(e.phone, msg('enquiryReply', e.name, e.interest))}>
                       <IconWhatsapp className="h-4 w-4 text-emerald-600" /> WhatsApp
                     </a>
                   </div>

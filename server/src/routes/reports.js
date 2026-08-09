@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import db from '../db.js';
 import { auth, allow, TRAINING } from '../auth.js';
+import { judge } from '../readiness.js';
 
 const r = Router();
 r.use(auth);
@@ -56,6 +57,9 @@ r.get('/dashboard', allow(...TRAINING), (_req, res) => {
     FROM payments WHERE paid_on >= date('now','start of month','-5 months')
     GROUP BY period ORDER BY period`).all();
 
+  const spent = db.prepare(
+    'SELECT COALESCE(SUM(amount),0) v FROM expenses WHERE substr(date,1,7) = ?').get(m).v;
+
   const trend = db.prepare(`
     SELECT date, SUM(status IN ('present','late')) present, COUNT(*) marked
     FROM attendance WHERE date >= date('now','-14 days')
@@ -70,15 +74,19 @@ r.get('/dashboard', allow(...TRAINING), (_req, res) => {
       collected_this_month: collected,
       collected_today: collectedToday,
       overdue_count: overdue,
-      total_outstanding: Math.round((totalBilled - totalPaid) * 100) / 100
+      total_outstanding: Math.round((totalBilled - totalPaid) * 100) / 100,
+      spent_this_month: spent,
+      profit_this_month: Math.round((collected - spent) * 100) / 100
     },
     enquiries, batches, trend, collection
   });
 });
 
-/* Performance leaderboard for a physical event — who is ready for the PET */
+/* Performance leaderboard for a physical event — who is ready for the PET.
+   Pass ?exam= to judge every row against that exam's cut-off. */
 r.get('/performance', allow(...TRAINING), (req, res) => {
   const event = req.query.event || '1600m Run';
+  const exam = req.query.exam || undefined;
   const lowerIsBetter = /run|sprint|m\b/i.test(event) && /run|sprint/i.test(event);
   const rows = db.prepare(`
     SELECT s.id, s.name, s.admission_no, s.gender, b.name AS batch_name,
@@ -90,7 +98,12 @@ r.get('/performance', allow(...TRAINING), (req, res) => {
       SELECT MAX(id) FROM test_records WHERE event = @event GROUP BY student_id
     )
     ORDER BY t.value ${lowerIsBetter ? 'ASC' : 'DESC'} LIMIT 100`).all({ event });
-  res.json({ event, lower_is_better: lowerIsBetter, rows });
+  const judged = rows.map(row => {
+    const targets = judge({ event, gender: row.gender, exam, value: row.value, unit: row.unit });
+    return { ...row, benchmark: targets[0] || null };
+  });
+  const exams = db.prepare('SELECT DISTINCT exam FROM benchmarks WHERE event = ? ORDER BY exam').all(event).map(x => x.exam);
+  res.json({ event, exam: exam || null, exams, lower_is_better: lowerIsBetter, rows: judged });
 });
 
 r.get('/events', allow(...TRAINING), (_req, res) => {
@@ -107,7 +120,10 @@ r.get('/export/:kind', allow(...TRAINING), (req, res) => {
                FROM payments p JOIN students s ON s.id=p.student_id ORDER BY p.paid_on DESC`,
     invoices: `SELECT i.period, s.admission_no, s.name, i.amount, i.due_date, i.status
                FROM invoices i JOIN students s ON s.id=i.student_id ORDER BY i.period DESC`,
-    enquiries: `SELECT created_at, name, phone, village, interest, source, status FROM enquiries ORDER BY created_at DESC`
+    enquiries: `SELECT created_at, name, phone, village, interest, source, status FROM enquiries ORDER BY created_at DESC`,
+    expenses: `SELECT e.date, e.category, e.description, e.amount, u.name recorded_by FROM expenses e
+               LEFT JOIN users u ON u.id=e.recorded_by ORDER BY e.date DESC`,
+    selections: `SELECT year, name, exam, village, published FROM selections ORDER BY year DESC, name`
   };
   const sql = queries[req.params.kind];
   if (!sql) return res.status(404).json({ error: 'Unknown export' });
