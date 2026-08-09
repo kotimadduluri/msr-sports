@@ -126,12 +126,21 @@ Follow these; they are why the UI looks like one product.
   icons from `lucide-react` through one `wrap()` helper (stroke 1.75, default
   size). Pages import from `icons.jsx`, never from `lucide-react` directly;
   the only non-Lucide SVG is the `Logo` mark. No emoji in the UI.
+- **Typography** — Inter Variable for everything, plus Barlow Condensed
+  (`font-display`, weights 600/700, self-hosted via @fontsource) for site
+  headlines and big numbers only, always bold + uppercase. The portal stays
+  all-Inter. Never load fonts from a CDN; the demo must stay self-contained.
 - **Motion** — use the primitives in `motion.jsx` (`Reveal` with `delay` for
-  stagger, `CountUp`, `Marquee`) plus the `float`/`marquee`/`lap` keyframes in
-  `tailwind.config.js`. Everything must respect `prefers-reduced-motion`; the
-  global rule in `index.css` collapses CSS transitions and `CountUp` checks the
-  media query itself. Website copy lives in `pages/site/content.js`, not inline
-  in components.
+  stagger, `CountUp`, `Marquee`) plus the keyframes in `tailwind.config.js`
+  (`float`, `marquee`; `ground`/`stride`/`bob`/`streak` drive the hero's
+  runner scene — `stride` is a two-frame opacity swap, frame B runs it delayed
+  half a period and is `motion-reduce:hidden` so reduced motion shows one clean
+  pose). Everything must respect `prefers-reduced-motion`; the global rule in
+  `index.css` collapses CSS transitions and `CountUp` checks the media query
+  itself. In-page anchors must go through `pages/site/ScrollLink.jsx` — plain
+  `#id` hrefs break under the demo's HashRouter (the catch-all route swallows
+  them). Website copy lives in `pages/site/content.js`, not inline in
+  components.
 - **Touch** — `.btn` is min 44px tall. Keep it. This app is used outdoors at
   5:30 AM on a phone.
 - **Loading** — skeletons (`<Loading rows={n} />`), not spinners.

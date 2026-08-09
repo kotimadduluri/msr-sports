@@ -11,7 +11,7 @@ function SectionHead({ kicker, title, sub, light = false }) {
       <p className="flex items-center gap-2.5 text-2xs font-bold uppercase tracking-widest text-saffron-600">
         <span className="h-px w-6 bg-saffron-500" aria-hidden="true" /> {kicker}
       </p>
-      <h2 className={`mt-2 text-3xl font-extrabold sm:text-4xl ${light ? 'text-white' : 'text-ink-900'}`}>{title}</h2>
+      <h2 className={`mt-2 font-display text-4xl font-bold uppercase leading-none sm:text-5xl ${light ? 'text-white' : 'text-ink-900'}`}>{title}</h2>
       {sub && <p className={`mt-3 leading-relaxed ${light ? 'text-msr-100' : 'text-ink-600'}`}>{sub}</p>}
     </Reveal>
   );
@@ -97,7 +97,7 @@ export function TrainingDay() {
               </div>
               <div className="card h-full p-5">
                 <p className="text-2xs font-semibold uppercase tracking-wider text-ink-500">{t}</p>
-                <p className="mt-1.5 text-2xl font-extrabold text-msr-800">{time}</p>
+                <p className="mt-1.5 font-display text-3xl font-bold text-msr-800">{time}</p>
                 <p className="mt-2 text-sm leading-relaxed text-ink-600">{d}</p>
               </div>
             </div>

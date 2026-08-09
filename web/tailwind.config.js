@@ -29,7 +29,9 @@ export default {
         critical: '#d03b3b'
       },
       fontFamily: {
-        sans: ['Inter var', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif']
+        sans: ['Inter Variable', 'Inter var', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        /* athletic condensed display face — site headlines and big numbers only */
+        display: ['Barlow Condensed', 'Arial Narrow', 'system-ui', 'sans-serif']
       },
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.02em' }]
@@ -45,14 +47,22 @@ export default {
         shimmer: { '100%': { transform: 'translateX(100%)' } },
         float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-8px)' } },
         marquee: { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } },
-        lap: { '0%': { strokeDashoffset: 0 }, '100%': { strokeDashoffset: -1320 } }
+        /* runner scene: lane dashes scroll past the athletes */
+        ground: { '0%': { strokeDashoffset: 0 }, '100%': { strokeDashoffset: 88 } },
+        /* two-frame run cycle — frame B runs the same animation delayed half a period */
+        stride: { '0%,100%': { opacity: 1 }, '50%': { opacity: 0 } },
+        bob: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-2.5px)' } },
+        streak: { '0%': { transform: 'translateX(60px)', opacity: 0 }, '12%': { opacity: .5 }, '100%': { transform: 'translateX(-360px)', opacity: 0 } }
       },
       animation: {
         'fade-up': 'fade-up .28s cubic-bezier(.22,1,.36,1) both',
         shimmer: 'shimmer 1.6s infinite',
         float: 'float 6s ease-in-out infinite',
         marquee: 'marquee 30s linear infinite',
-        lap: 'lap 10s linear infinite'
+        ground: 'ground .9s linear infinite',
+        stride: 'stride .46s steps(1,end) infinite',
+        bob: 'bob .46s ease-in-out infinite',
+        streak: 'streak 2.1s linear infinite'
       }
     }
   },

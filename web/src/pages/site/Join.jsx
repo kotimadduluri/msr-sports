@@ -54,7 +54,7 @@ export default function Join({ courses }) {
 
       <div className="relative mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 md:grid-cols-2 md:gap-14">
         <Reveal>
-          <h2 className="text-3xl font-extrabold text-white sm:text-4xl">Join MSR Sports Academy</h2>
+          <h2 className="font-display text-4xl font-bold uppercase leading-none text-white sm:text-5xl">Join MSR Sports Academy</h2>
           <p className="mt-4 max-w-md leading-relaxed text-msr-100">
             Leave your number and our office will call you the same day with fees, batch
             timings and what to bring on your first morning.
