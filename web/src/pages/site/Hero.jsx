@@ -166,11 +166,10 @@ function RunScene() {
   const uid = useId();
   const [on] = useState(() => typeof window === 'undefined'
     || !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const crowd = Array.from({ length: 53 }, (_, i) => i);
 
   return (
     <div className="relative mx-auto w-full max-w-md select-none">
-      <svg viewBox="0 40 420 220" className="w-full" aria-hidden="true">
+      <svg viewBox="0 100 420 158" className="w-full" aria-hidden="true">
         <defs>
           <linearGradient id={`${uid}-track`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#22407a" />
@@ -186,25 +185,6 @@ function RunScene() {
             <stop offset="1" stopColor="#f5a524" stopOpacity="0" />
           </radialGradient>
         </defs>
-
-        {/* stands with a drifting crowd */}
-        <rect x="0" y="42" width="420" height="46" fill="#0d1a33" />
-        <g opacity=".85">
-          {on && (
-            <animateTransform attributeName="transform" type="translate"
-              values="0 0; -54 0" dur="6.5s" repeatCount="indefinite" />
-          )}
-          {crowd.map(i => (
-            <g key={i}>
-              <circle cx={i * 9} cy={i % 2 ? 58 : 61} r="2" fill="#3a62b0" opacity={[.9, .45, .7][i % 3]} />
-              <circle cx={i * 9 + 4} cy={i % 2 ? 72 : 75} r="2" fill="#2a4c93" opacity={[.6, .9, .4][i % 3]} />
-            </g>
-          ))}
-        </g>
-
-        {/* the ground runs straight up to the stands */}
-        <path d="M0 88 H420" stroke="#f5a524" strokeOpacity=".45" strokeWidth="2" />
-        <rect x="0" y="89" width="420" height="171" fill="#131f3c" />
 
         {/* the circuit, seen from the stands */}
         <ellipse cx={CX} cy={CY} rx="200" ry="60" fill={`url(#${uid}-track)`} />
