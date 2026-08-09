@@ -1,4 +1,4 @@
-import React, { useId, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { Reveal, CountUp, Marquee } from '../../motion.jsx';
 import { IconPin, IconPhone, IconTimer, IconCheck } from '../../icons.jsx';
 import ScrollLink from './ScrollLink.jsx';
@@ -93,12 +93,75 @@ function Athlete({ x, y, scale, tone, toneBack, phase = 0, drift, on }) {
   );
 }
 
-/* ------------------------------------------------------------------ scene */
+/* ------------------------------------------------------------------ scene
+   A 3/4 view of the stadium: the athletes lap a perspective oval. A small
+   rAF driver moves each one along an ellipse — figures stay upright, shrink
+   with distance on the back straight, narrow through the bends (turn
+   foreshortening) and mirror when running the far side. Limb animation stays
+   on the SMIL skeleton; painter-order is re-sorted as they overtake. */
+
+const CX = 210, CY = 190;
+const FIELD = [
+  { rx: 130, ry: 37, lap: 9.6, th: 2.4, base: .72, tone: '#8dabdd', toneBack: '#5f7cab', phase: 0.11 },
+  { rx: 157, ry: 45, lap: 8.5, th: 4.3, base: .84, tone: '#dbe6f6', toneBack: '#93a8cd', phase: 0.42 },
+  { rx: 184, ry: 53, lap: 7.5, th: 1.1, base: .97, tone: '#f5a524', toneBack: '#b97b16', phase: 0.02, glow: true }
+];
+
+function placeRunner(el, r, th) {
+  const depth = (Math.sin(th) + 1) / 2;                       // 0 = back straight, 1 = home straight
+  const s = r.base * (0.55 + 0.45 * depth);
+  const sin = Math.sin(th);
+  /* through the bends the silhouette narrows, then mirrors — reads as the turn */
+  const sx = s * (sin >= 0 ? 1 : -1) * Math.max(0.24, Math.min(1, Math.abs(sin) * 1.5));
+  const x = CX + r.rx * Math.cos(th);
+  const y = CY + r.ry * sin;
+  el.setAttribute('transform', `translate(${x.toFixed(2)} ${y.toFixed(2)}) scale(${sx.toFixed(3)} ${s.toFixed(3)})`);
+  return y;
+}
+
+function LapPack({ on, glowId }) {
+  const packRef = useRef(null);
+  const runnerRefs = useRef([]);
+
+  useEffect(() => {
+    const els = runnerRefs.current.filter(Boolean);
+    if (!els.length) return;
+    if (!on) { els.forEach((el, i) => placeRunner(el, FIELD[i], FIELD[i].th)); return; }
+    let raf;
+    const t0 = performance.now();
+    const tick = now => {
+      const t = (now - t0) / 1000;
+      const ys = els.map((el, i) => {
+        const r = FIELD[i];
+        return { el, y: placeRunner(el, r, r.th - (2 * Math.PI * t) / r.lap) };
+      });
+      /* keep the nearest athlete painted on top */
+      const sorted = [...ys].sort((a, b) => a.y - b.y);
+      if (sorted.some((s, i) => s.el !== packRef.current.children[i])) {
+        sorted.forEach(s => packRef.current.appendChild(s.el));
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [on]);
+
+  return (
+    <g ref={packRef}>
+      {FIELD.map((r, i) => (
+        <g key={i} ref={el => { runnerRefs.current[i] = el; }}>
+          {r.glow && <circle cy="-17" r="34" fill={`url(#${glowId})`} />}
+          <Athlete x={0} y={0} scale={1} tone={r.tone} toneBack={r.toneBack} phase={r.phase} on={on} />
+        </g>
+      ))}
+    </g>
+  );
+}
+
 function RunScene() {
   const uid = useId();
   const [on] = useState(() => typeof window === 'undefined'
     || !window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const dash = { stroke: '#fff', strokeOpacity: 0.15, strokeWidth: 2, strokeDasharray: '26 18' };
   const crowd = Array.from({ length: 53 }, (_, i) => i);
 
   return (
@@ -106,12 +169,16 @@ function RunScene() {
       <svg viewBox="0 40 420 220" className="w-full" aria-hidden="true">
         <defs>
           <linearGradient id={`${uid}-track`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#20396e" />
-            <stop offset=".25" stopColor="#1b3059" />
+            <stop offset="0" stopColor="#22407a" />
+            <stop offset=".45" stopColor="#1b3059" />
             <stop offset="1" stopColor="#16264a" />
           </linearGradient>
+          <linearGradient id={`${uid}-field`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#152a52" />
+            <stop offset="1" stopColor="#101d3a" />
+          </linearGradient>
           <radialGradient id={`${uid}-glow`}>
-            <stop offset="0" stopColor="#f5a524" stopOpacity=".22" />
+            <stop offset="0" stopColor="#f5a524" stopOpacity=".25" />
             <stop offset="1" stopColor="#f5a524" stopOpacity="0" />
           </radialGradient>
         </defs>
@@ -138,24 +205,22 @@ function RunScene() {
           MSR SPORTS ACADEMY
         </text>
         <path d="M0 126 H420" stroke="#f5a524" strokeOpacity=".55" strokeWidth="2.5" />
+        <rect x="0" y="126" width="420" height="134" fill="#131f3c" />
 
-        {/* the track, hazier in the distance, faster up close */}
-        <rect x="0" y="126" width="420" height="134" fill={`url(#${uid}-track)`} />
-        <path d="M0 158 H420" className="animate-ground" style={{ animationDuration: '1.2s' }} {...dash} strokeOpacity=".1" />
-        <path d="M0 200 H420" className="animate-ground" style={{ animationDuration: '.8s', animationDelay: '-.3s' }} {...dash} />
-        <path d="M0 248 H420" className="animate-ground" style={{ animationDuration: '.55s', animationDelay: '-.6s' }} {...dash} strokeOpacity=".2" />
+        {/* the circuit, seen from the stands */}
+        <ellipse cx={CX} cy={CY} rx="200" ry="60" fill={`url(#${uid}-track)`} />
+        <ellipse cx={CX} cy={CY} rx="143" ry="41" fill="none" stroke="#fff" strokeOpacity=".1" strokeWidth="1.5" strokeDasharray="10 12" />
+        <ellipse cx={CX} cy={CY} rx="171" ry="49" fill="none" stroke="#fff" strokeOpacity=".1" strokeWidth="1.5" strokeDasharray="10 12" />
+        <ellipse cx={CX} cy={CY} rx="114" ry="30" fill={`url(#${uid}-field)`} />
+        <ellipse cx={CX} cy={CY} rx="114" ry="30" fill="none" stroke="#8dabdd" strokeOpacity=".2" strokeWidth="1.2" />
+        {/* start / finish */}
+        <path d={`M${CX} ${CY + 30} L${CX} ${CY + 59}`} stroke="#fff" strokeOpacity=".4" strokeWidth="2.5" strokeDasharray="4 3" />
+        <text x={CX} y={CY + 6} textAnchor="middle" fill="#2f54a0" fillOpacity=".9"
+          fontFamily="Barlow Condensed, Arial Narrow, sans-serif" fontWeight="700" fontSize="21" letterSpacing="6">
+          MSR
+        </text>
 
-        {/* wind streaks */}
-        {[[140, '-.2s'], [184, '-1.1s'], [228, '-1.7s']].map(([y, d]) => (
-          <path key={y} d={`M340 ${y} h26`} stroke="#fff" strokeOpacity=".45" strokeWidth="2"
-            strokeLinecap="round" className="animate-streak motion-reduce:hidden" style={{ animationDelay: d }} />
-        ))}
-
-        {/* the field — nearest athlete leads in saffron */}
-        <circle cx="288" cy="216" r="62" fill={`url(#${uid}-glow)`} />
-        <g opacity=".75"><Athlete x={112} y={152} scale={0.5} tone="#8dabdd" toneBack="#5f7cab" phase={0.11} on={on} /></g>
-        <Athlete x={198} y={196} scale={0.68} tone="#dbe6f6" toneBack="#93a8cd" phase={0.42} drift={5.2} on={on} />
-        <Athlete x={288} y={242} scale={0.9} tone="#f5a524" toneBack="#b97b16" phase={0.02} drift={4.1} on={on} />
+        <LapPack on={on} glowId={`${uid}-glow`} />
       </svg>
 
       {/* floating proof cards — real screens from the admin app */}
