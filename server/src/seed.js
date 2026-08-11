@@ -140,6 +140,8 @@ if (existing === 0) {
       });
     }
   })();
+  /* about a quarter of the academy stays in the hostel — billed separately */
+  db.prepare("UPDATE students SET hostel_fee = 1500 WHERE status = 'active' AND id % 4 = 0").run();
 }
 
 const students = db.prepare("SELECT id, batch_id, gender, join_date, status FROM students").all();
@@ -166,32 +168,39 @@ if (db.prepare('SELECT COUNT(*) c FROM attendance').get().c === 0) {
 
 /* ---------- fee bills + payments for the last 4 months ---------- */
 if (db.prepare('SELECT COUNT(*) c FROM invoices').get().c === 0) {
-  const mkInv = db.prepare(`INSERT OR IGNORE INTO invoices (student_id, period, description, amount, due_date, status)
-    VALUES (?,?,?,?,?,?)`);
+  const mkInv = db.prepare(`INSERT OR IGNORE INTO invoices (student_id, period, description, amount, due_date, status, type)
+    VALUES (?,?,?,?,?,?,?)`);
   const mkPay = db.prepare(`INSERT INTO payments (student_id, invoice_id, receipt_no, amount, mode, paid_on, collected_by)
     VALUES (?,?,?,?,?,?,1)`);
   const feeOf = Object.fromEntries(db.prepare('SELECT id, fee_amount, name FROM courses').all().map(c => [c.id, c]));
-  const stu = db.prepare('SELECT id, course_id, join_date, status FROM students').all();
+  const stu = db.prepare('SELECT id, course_id, join_date, status, hostel_fee FROM students').all();
   let receipt = 1;
+  const settle = (st, invId, amount, period, payProb) => {
+    const roll = rnd();
+    if (roll >= payProb) return;
+    const partial = rnd() < 0.08;
+    const amt = partial ? Math.round(amount / 2) : amount;
+    mkPay.run(st.id, invId, `R${new Date().getFullYear()}${String(receipt++).padStart(5, '0')}`,
+      amt, pick(['cash', 'upi', 'upi', 'bank']), `${period}-${String(int(1, 26)).padStart(2, '0')}`);
+    db.prepare('UPDATE invoices SET status = ? WHERE id = ?').run(partial ? 'partial' : 'paid', invId);
+  };
   db.transaction(() => {
     for (let back = 3; back >= 0; back--) {
       const d = new Date(); d.setMonth(d.getMonth() - back);
       const period = d.toISOString().slice(0, 7);
+      const payProb = back === 0 ? 0.55 : back === 1 ? 0.86 : 0.95;
       for (const st of stu) {
         const course = feeOf[st.course_id];
         if (!course || !course.fee_amount) continue;
         if (st.join_date.slice(0, 7) > period) continue;
         if (st.status !== 'active' && back < 2) continue;
-        mkInv.run(st.id, period, `${course.name} fee for ${period}`, course.fee_amount, `${period}-10`, 'unpaid');
-        const inv = db.prepare('SELECT id, amount FROM invoices WHERE student_id=? AND period=?').get(st.id, period);
-        const roll = rnd();
-        const payProb = back === 0 ? 0.55 : back === 1 ? 0.86 : 0.95;
-        if (roll < payProb) {
-          const partial = rnd() < 0.08;
-          const amt = partial ? Math.round(inv.amount / 2) : inv.amount;
-          mkPay.run(st.id, inv.id, `R${new Date().getFullYear()}${String(receipt++).padStart(5, '0')}`,
-            amt, pick(['cash', 'upi', 'upi', 'bank']), `${period}-${String(int(1, 26)).padStart(2, '0')}`);
-          db.prepare('UPDATE invoices SET status = ? WHERE id = ?').run(partial ? 'partial' : 'paid', inv.id);
+        mkInv.run(st.id, period, `${course.name} fee for ${period}`, course.fee_amount, `${period}-10`, 'unpaid', 'training');
+        const inv = db.prepare("SELECT id, amount FROM invoices WHERE student_id=? AND period=? AND type='training'").get(st.id, period);
+        settle(st, inv.id, inv.amount, period, payProb);
+        if (st.hostel_fee) {
+          mkInv.run(st.id, period, `Hostel fee for ${period}`, st.hostel_fee, `${period}-10`, 'unpaid', 'hostel');
+          const hinv = db.prepare("SELECT id, amount FROM invoices WHERE student_id=? AND period=? AND type='hostel'").get(st.id, period);
+          settle(st, hinv.id, hinv.amount, period, payProb);
         }
       }
     }

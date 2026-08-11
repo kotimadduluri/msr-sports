@@ -94,8 +94,9 @@ CREATE TABLE IF NOT EXISTS invoices (
   amount REAL NOT NULL,
   due_date TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'unpaid',          -- unpaid | partial | paid | waived
+  type TEXT NOT NULL DEFAULT 'training',          -- training | hostel
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  UNIQUE(student_id, period)
+  UNIQUE(student_id, period, type)
 );
 
 CREATE TABLE IF NOT EXISTS payments (
@@ -214,9 +215,41 @@ const addColumn = (table, name, ddl) => {
   if (!cols(table).includes(name)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${ddl}`);
 };
 addColumn('students', 'fee_override', 'fee_override REAL');                          // negotiated monthly fee
+addColumn('students', 'hostel_fee', 'hostel_fee REAL');                              // ₹/month for boarders; NULL = day scholar
 addColumn('students', 'preferred_lang', "preferred_lang TEXT NOT NULL DEFAULT 'te'"); // WhatsApp message language
 addColumn('students', 'availability_note', 'availability_note TEXT');                 // "knee — no running this week"
 addColumn('students', 'leave_reason', 'leave_reason TEXT');                           // why they went on-hold/dropped
+
+/* Hostel billing split the fee ledger in two. Databases from before have
+   UNIQUE(student_id, period) baked into the invoices table, which blocks a
+   hostel bill sitting next to the month's training bill — rebuild once with
+   the wider key. Runs inside foreign_keys=OFF so payments keep pointing at
+   the surviving "invoices" name. */
+if (!cols('invoices').includes('type')) {
+  db.pragma('foreign_keys = OFF');
+  db.exec(`
+    BEGIN;
+    CREATE TABLE invoices_new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+      period TEXT NOT NULL,
+      description TEXT,
+      amount REAL NOT NULL,
+      due_date TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'unpaid',
+      type TEXT NOT NULL DEFAULT 'training',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(student_id, period, type)
+    );
+    INSERT INTO invoices_new (id, student_id, period, description, amount, due_date, status, created_at)
+      SELECT id, student_id, period, description, amount, due_date, status, created_at FROM invoices;
+    DROP TABLE invoices;
+    ALTER TABLE invoices_new RENAME TO invoices;
+    CREATE INDEX IF NOT EXISTS idx_inv_student ON invoices(student_id);
+    COMMIT;
+  `);
+  db.pragma('foreign_keys = ON');
+}
 
 /* Default cut-offs, inserted once. These are training targets to edit against
    the current official notification — not authoritative recruitment data. */

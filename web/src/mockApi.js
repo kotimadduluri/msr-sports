@@ -87,6 +87,40 @@ db.students.forEach((s, i) => {
 db.enquiries.forEach((e, i) => { e.phone = TEST_PHONES[i % 2]; });
 db.academy.phone = '+91 81790 28750';
 
+/* Hostel billing arrived after the snapshot was exported. The snapshot's bills
+   are all training fees; on top of them, every 4th active student boards in
+   the hostel at ₹1,500/month with bills for last month and this month.
+   Arithmetic rolls, no Math.random — the demo is identical for every viewer. */
+db.invoices.forEach(i => { i.type = 'training'; });
+(function seedHostel() {
+  const prevMonth = addDays(`${month}-01`, -1).slice(0, 7);
+  let n = 0, invId = 900001, payId = 910001;
+  for (const s of db.students) {
+    if (s.status !== 'active' || s.id % 4 !== 0) continue;
+    s.hostel_fee = 1500;
+    for (const period of [prevMonth, month]) {
+      if (s.join_date.slice(0, 7) > period) continue;
+      const roll = (n++ * 4243) % 100;
+      const paid = period === prevMonth ? roll < 88 : roll < 55;
+      const inv = {
+        id: invId++, student_id: s.id, period, type: 'hostel',
+        description: `Hostel fee for ${period}`, amount: 1500,
+        due_date: `${period}-10`, status: paid ? 'paid' : 'unpaid'
+      };
+      db.invoices.push(inv);
+      if (paid) {
+        const maxDay = period === month ? Number(TODAY.slice(8, 10)) : 26;
+        db.payments.push({
+          id: payId++, student_id: s.id, invoice_id: inv.id,
+          receipt_no: `RH${period.replace('-', '')}${String(payId % 10000).padStart(4, '0')}`,
+          amount: 1500, mode: roll % 3 ? 'upi' : 'cash',
+          paid_on: `${period}-${String((roll % maxDay) + 1).padStart(2, '0')}`
+        });
+      }
+    }
+  }
+})();
+
 /* --- cut-off arithmetic (mirror of server/src/readiness.js) --- */
 const meets = (v, t, u) => u === 'sec' ? v <= t : v >= t;
 const readyStatus = (v, t, u) => meets(v, t, u) ? 'ready' : (u === 'sec' ? v <= t * 1.1 : v >= t * 0.9) ? 'borderline' : 'at-risk';
@@ -104,6 +138,11 @@ const testsOf = id => db.tests.filter(t => t.student_id === Number(id));
 const attOf = id => db.attendance.filter(a => a.student_id === Number(id)).sort((a, b) => b.date.localeCompare(a.date));
 
 const paidOn = invId => db.payments.filter(p => p.invoice_id === invId).reduce((a, p) => a + p.amount, 0);
+/* a payment inherits its type from the bill it settles; loose payments count as training */
+const feeTypeOf = p => db.invoices.find(i => i.id === p.invoice_id)?.type === 'hostel' ? 'hostel' : 'training';
+const dueByType = t => Math.round(db.invoices
+  .filter(i => (i.type || 'training') === t && (i.status === 'unpaid' || i.status === 'partial'))
+  .reduce((a, i) => a + i.amount - paidOn(i.id), 0) * 100) / 100;
 const balanceOf = id => {
   const billed = invoicesOf(id).filter(i => i.status !== 'waived').reduce((a, i) => a + i.amount, 0);
   return Math.round((billed - paymentsOf(id).reduce((a, p) => a + p.amount, 0)) * 100) / 100;
@@ -160,6 +199,10 @@ const GET = {
         collected_today: db.payments.filter(p => p.paid_on === TODAY).reduce((a, p) => a + p.amount, 0),
         overdue_count: db.invoices.filter(i => i.status !== 'paid' && i.status !== 'waived' && i.due_date < TODAY).length,
         total_outstanding: db.students.reduce((a, s) => a + Math.max(0, balanceOf(s.id)), 0),
+        collected_training: db.payments.filter(p => p.paid_on.slice(0, 7) === month && feeTypeOf(p) !== 'hostel').reduce((a, p) => a + p.amount, 0),
+        collected_hostel: db.payments.filter(p => p.paid_on.slice(0, 7) === month && feeTypeOf(p) === 'hostel').reduce((a, p) => a + p.amount, 0),
+        due_training: dueByType('training'),
+        due_hostel: dueByType('hostel'),
         spent_this_month: db.expenses.filter(e => e.date.slice(0, 7) === month).reduce((a, e) => a + e.amount, 0),
         profit_this_month: Math.round((collectedMonth - db.expenses.filter(e => e.date.slice(0, 7) === month).reduce((a, e) => a + e.amount, 0)) * 100) / 100
       },
@@ -261,22 +304,27 @@ const GET = {
   },
 
   '/fees/invoices'(path) {
-    const { status, period, q, overdue } = qs(path);
+    const { status, period, q, overdue, type } = qs(path);
     return db.invoices.map(i => {
       const s = student(i.student_id);
       const paid = paidOn(i.id);
       return s ? { ...i, paid, balance: Math.round((i.amount - paid) * 100) / 100, student_name: s.name, admission_no: s.admission_no, phone: s.phone, guardian_phone: s.guardian_phone, batch_name: batches[s.batch_id]?.name } : null;
     }).filter(Boolean)
       .filter(i => (!status || i.status === status) && (!period || i.period === period)
+        && (!type || (i.type || 'training') === type)
         && (overdue !== '1' || (i.status !== 'paid' && i.status !== 'waived' && i.due_date < TODAY))
         && (!q || `${i.student_name} ${i.admission_no} ${i.phone}`.toLowerCase().includes(q.toLowerCase())))
       .sort((a, b) => b.due_date.localeCompare(a.due_date));
   },
 
-  '/fees/payments': () => db.payments.map(p => {
-    const s = student(p.student_id);
-    return { ...p, student_name: s?.name, admission_no: s?.admission_no };
-  }).sort((a, b) => b.paid_on.localeCompare(a.paid_on)),
+  '/fees/payments'(path) {
+    const { type } = qs(path);
+    return db.payments.map(p => {
+      const s = student(p.student_id);
+      return { ...p, fee_type: feeTypeOf(p), student_name: s?.name, admission_no: s?.admission_no };
+    }).filter(p => !type || p.fee_type === type)
+      .sort((a, b) => b.paid_on.localeCompare(a.paid_on));
+  },
 
   '/reports/events': () => [...new Set(db.tests.map(t => t.event))].sort(),
 
@@ -407,7 +455,7 @@ function get(path) {
     const p = db.payments.find(x => x.id === Number(base(path).split('/')[3]));
     const s = p && student(p.student_id);
     const inv = p && db.invoices.find(i => i.id === p.invoice_id);
-    return { ...p, student_name: s?.name, admission_no: s?.admission_no, course_name: courses[s?.course_id]?.name, period: inv?.period, academy: db.academy };
+    return { ...p, student_name: s?.name, admission_no: s?.admission_no, course_name: courses[s?.course_id]?.name, period: inv?.period, fee_type: inv?.type === 'hostel' ? 'hostel' : 'training', academy: db.academy };
   }
   const fn = GET[base(path)];
   if (!fn) throw new Error(`This is a demo — "${base(path)}" is not wired up here.`);
@@ -456,14 +504,20 @@ function post(path, body = {}) {
   }
   if (path === '/fees/generate') {
     const period = body.period || month;
-    let created = 0;
+    let training = 0, hostel = 0;
+    const has = (sid, type) => db.invoices.some(i => i.student_id === sid && i.period === period && (i.type || 'training') === type);
     for (const s of db.students.filter(x => x.status === 'active')) {
       const fee = courses[s.course_id]?.fee_amount;
-      if (!fee || db.invoices.some(i => i.student_id === s.id && i.period === period)) continue;
-      db.invoices.push({ id: Date.now() + created, student_id: s.id, period, description: `${courses[s.course_id].name} fee for ${period}`, amount: fee, due_date: `${period}-10`, status: 'unpaid' });
-      created++;
+      if (fee && !has(s.id, 'training')) {
+        db.invoices.push({ id: Date.now() + training + hostel, student_id: s.id, period, type: 'training', description: `${courses[s.course_id].name} fee for ${period}`, amount: fee, due_date: `${period}-10`, status: 'unpaid' });
+        training++;
+      }
+      if (s.hostel_fee > 0 && !has(s.id, 'hostel')) {
+        db.invoices.push({ id: Date.now() + training + hostel, student_id: s.id, period, type: 'hostel', description: `Hostel fee for ${period}`, amount: s.hostel_fee, due_date: `${period}-10`, status: 'unpaid' });
+        hostel++;
+      }
     }
-    return { ok: true, period, created };
+    return { ok: true, period, created: training + hostel, training, hostel };
   }
   if (path === '/students') {
     const id = Math.max(0, ...db.students.map(s => s.id)) + 1;

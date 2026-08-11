@@ -26,7 +26,7 @@ Public endpoints (no `auth`) live only in `enquiries.js` (the enquiry form) and 
 ## better-sqlite3 rules
 - **Never mix positional and named parameters in one statement** (trap §8.2): `.all(month, { batch_id })` throws. Pick `?` + `.run(a, b)` OR `@name` + `.run({ a, b })` per statement. See the `WHERE`-builder pattern in `fees.js` `GET /invoices` for the named style.
 - Wrap multi-row writes in `db.transaction(() => { ... })()` (see `POST /fees/generate`).
-- Idempotency is load-bearing: attendance is an upsert (`UNIQUE(student_id, date)` + `ON CONFLICT ... DO UPDATE`); invoices use `INSERT OR IGNORE` against `UNIQUE(student_id, period)` so "generate bills" can never double-bill.
+- Idempotency is load-bearing: attendance is an upsert (`UNIQUE(student_id, date)` + `ON CONFLICT ... DO UPDATE`); invoices use `INSERT OR IGNORE` against `UNIQUE(student_id, period, type)` (`type` = `training` | `hostel`) so "generate bills" can never double-bill.
 
 ## Invoice status is derived
 Never set `invoices.status` by hand except `'waived'`. After any payment insert/delete or invoice amount change, call `refreshInvoiceStatus(invoiceId)` (defined in `server/src/routes/fees.js`) — it recomputes unpaid/partial/paid from summed payments. Also: any "overdue" aggregate must span **all periods**, not just the current month (trap §8.5).

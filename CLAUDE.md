@@ -94,9 +94,10 @@ enquiries, test_records, settings`.
   `MSR20260001`. Users read this out over the phone — never change the format.
 - `attendance` has `UNIQUE(student_id, date)`. Marking is an upsert
   (`ON CONFLICT ... DO UPDATE`), so re-saving a roll call is safe.
-- `invoices` has `UNIQUE(student_id, period)`. `POST /api/fees/generate` uses
-  `INSERT OR IGNORE`, so clicking "generate bills" twice cannot double-bill.
-  That property is load-bearing — keep it.
+- `invoices` has `UNIQUE(student_id, period, type)` where `type` is `training`
+  or `hostel` — a student can carry one of each per month, billed separately.
+  `POST /api/fees/generate` uses `INSERT OR IGNORE`, so clicking "generate
+  bills" twice cannot double-bill. That property is load-bearing — keep it.
 - Invoice status is **derived** from payments by `refreshInvoiceStatus()`, never
   set by hand except for `waived`.
 - Money is stored as `REAL` rupees. Fine at this scale; if it ever grows, move

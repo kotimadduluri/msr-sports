@@ -35,6 +35,19 @@ r.get('/dashboard', allow(...TRAINING), (_req, res) => {
 
   const collected = db.prepare(
     `SELECT COALESCE(SUM(amount),0) v FROM payments WHERE substr(paid_on,1,7) = ?`).get(m).v;
+
+  /* training vs hostel: a payment takes its type from the bill it settles;
+     loose payments (no bill) count as training */
+  const collectedSplit = { training: 0, hostel: 0 };
+  for (const row of db.prepare(`
+    SELECT CASE WHEN i.type = 'hostel' THEN 'hostel' ELSE 'training' END t, COALESCE(SUM(p.amount),0) v
+    FROM payments p LEFT JOIN invoices i ON i.id = p.invoice_id
+    WHERE substr(p.paid_on,1,7) = ? GROUP BY t`).all(m)) collectedSplit[row.t] = row.v;
+  const dueSplit = { training: 0, hostel: 0 };
+  for (const row of db.prepare(`
+    SELECT CASE WHEN i.type = 'hostel' THEN 'hostel' ELSE 'training' END t,
+      COALESCE(SUM(i.amount - COALESCE((SELECT SUM(amount) FROM payments WHERE invoice_id = i.id), 0)), 0) v
+    FROM invoices i WHERE i.status IN ('unpaid','partial') GROUP BY t`).all()) dueSplit[row.t] = row.v;
   const collectedToday = db.prepare(
     `SELECT COALESCE(SUM(amount),0) v FROM payments WHERE paid_on = ?`).get(today).v;
 
@@ -75,6 +88,10 @@ r.get('/dashboard', allow(...TRAINING), (_req, res) => {
       collected_today: collectedToday,
       overdue_count: overdue,
       total_outstanding: Math.round((totalBilled - totalPaid) * 100) / 100,
+      collected_training: collectedSplit.training,
+      collected_hostel: collectedSplit.hostel,
+      due_training: Math.round(dueSplit.training * 100) / 100,
+      due_hostel: Math.round(dueSplit.hostel * 100) / 100,
       spent_this_month: spent,
       profit_this_month: Math.round((collected - spent) * 100) / 100
     },
@@ -118,7 +135,7 @@ r.get('/export/:kind', allow(...TRAINING), (req, res) => {
                LEFT JOIN courses c ON c.id=s.course_id LEFT JOIN batches b ON b.id=s.batch_id ORDER BY s.name`,
     payments: `SELECT p.receipt_no, p.paid_on, s.admission_no, s.name, p.amount, p.mode, p.reference
                FROM payments p JOIN students s ON s.id=p.student_id ORDER BY p.paid_on DESC`,
-    invoices: `SELECT i.period, s.admission_no, s.name, i.amount, i.due_date, i.status
+    invoices: `SELECT i.period, i.type, s.admission_no, s.name, i.amount, i.due_date, i.status
                FROM invoices i JOIN students s ON s.id=i.student_id ORDER BY i.period DESC`,
     enquiries: `SELECT created_at, name, phone, village, interest, source, status FROM enquiries ORDER BY created_at DESC`,
     expenses: `SELECT e.date, e.category, e.description, e.amount, u.name recorded_by FROM expenses e

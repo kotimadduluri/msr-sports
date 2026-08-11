@@ -86,6 +86,14 @@ export default function Dashboard() {
           </header>
           <p className="mb-3 text-sm text-ink-500">Money actually received each month.</p>
           <Columns data={collection} format={rupees} />
+          {(d.fees.collected_hostel > 0 || d.fees.due_hostel > 0) && (
+            <p className="mt-3 border-t border-ink-100 pt-3 text-sm text-ink-600">
+              Training <strong>{rupees(d.fees.collected_training || 0)}</strong> collected,{' '}
+              <span className="font-semibold">{rupees(d.fees.due_training || 0)}</span> pending ·{' '}
+              Hostel <strong>{rupees(d.fees.collected_hostel || 0)}</strong> collected,{' '}
+              <span className="font-semibold">{rupees(d.fees.due_hostel || 0)}</span> pending
+            </p>
+          )}
           {d.fees.spent_this_month !== undefined && (
             <p className="mt-3 border-t border-ink-100 pt-3 text-sm text-ink-600">
               This month: collected <strong>{rupees(d.fees.collected_this_month)}</strong> · spent{' '}

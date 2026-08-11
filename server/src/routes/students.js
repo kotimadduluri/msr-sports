@@ -84,9 +84,9 @@ r.post('/', allow(...OFFICE), (req, res) => {
   }
   const info = db.prepare(`INSERT INTO students
     (admission_no,name,gender,dob,phone,guardian_name,guardian_phone,address,village,aadhaar_last4,
-     course_id,batch_id,join_date,status,height_cm,chest_cm,chest_expanded_cm,weight_kg,target_exam,notes)
+     course_id,batch_id,join_date,status,height_cm,chest_cm,chest_expanded_cm,weight_kg,target_exam,notes,hostel_fee)
     VALUES (@admission_no,@name,@gender,@dob,@phone,@guardian_name,@guardian_phone,@address,@village,@aadhaar_last4,
-     @course_id,@batch_id,@join_date,@status,@height_cm,@chest_cm,@chest_expanded_cm,@weight_kg,@target_exam,@notes)`)
+     @course_id,@batch_id,@join_date,@status,@height_cm,@chest_cm,@chest_expanded_cm,@weight_kg,@target_exam,@notes,@hostel_fee)`)
     .run({
       admission_no, name: b.name, gender: b.gender || 'M', dob: b.dob || null, phone: b.phone || null,
       guardian_name: b.guardian_name || null, guardian_phone: b.guardian_phone || null,
@@ -95,7 +95,7 @@ r.post('/', allow(...OFFICE), (req, res) => {
       join_date: b.join_date || new Date().toISOString().slice(0, 10),
       status: b.status || 'active', height_cm: b.height_cm || null, chest_cm: b.chest_cm || null,
       chest_expanded_cm: b.chest_expanded_cm || null, weight_kg: b.weight_kg || null,
-      target_exam: b.target_exam || null, notes: b.notes || null
+      target_exam: b.target_exam || null, notes: b.notes || null, hostel_fee: b.hostel_fee || null
     });
   res.status(201).json({ id: info.lastInsertRowid, admission_no, warning });
 });
@@ -106,7 +106,7 @@ r.patch('/:id', allow(...OFFICE), (req, res) => {
   const fields = ['name','gender','dob','phone','guardian_name','guardian_phone','address','village',
     'aadhaar_last4','course_id','batch_id','join_date','status','height_cm','chest_cm',
     'chest_expanded_cm','weight_kg','target_exam','notes','photo_url',
-    'fee_override','preferred_lang','availability_note','leave_reason'];
+    'fee_override','preferred_lang','availability_note','leave_reason','hostel_fee'];
   if (req.body?.status && req.body.status !== 'active' && cur.status === 'active' && !req.body.leave_reason) {
     return res.status(400).json({ error: 'Add a short reason when moving a student out of active' });
   }

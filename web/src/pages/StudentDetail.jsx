@@ -63,7 +63,8 @@ export default function StudentDetail() {
     setEdit({
       status: s.status, leave_reason: s.leave_reason || '',
       availability_note: s.availability_note || '',
-      fee_override: s.fee_override ?? '', target_exam: s.target_exam || '',
+      fee_override: s.fee_override ?? '', hostel_fee: s.hostel_fee ?? '',
+      target_exam: s.target_exam || '',
       preferred_lang: s.preferred_lang || 'te', batch_id: s.batch_id ?? ''
     });
     if (!batchList.length) api.get('/batches').then(setBatchList).catch(() => {});
@@ -78,6 +79,7 @@ export default function StudentDetail() {
         leave_reason: edit.leave_reason || null,
         availability_note: edit.availability_note || null,
         fee_override: edit.fee_override === '' ? null : Number(edit.fee_override),
+        hostel_fee: edit.hostel_fee === '' ? null : Number(edit.hostel_fee),
         target_exam: edit.target_exam || null,
         preferred_lang: edit.preferred_lang,
         batch_id: edit.batch_id ? Number(edit.batch_id) : null
@@ -185,6 +187,7 @@ export default function StudentDetail() {
             ['Batch timing', s.start_time ? `${s.start_time} – ${s.end_time}` : null],
             ['Target exam', s.target_exam],
             ['Monthly fee', s.fee_override ? `${rupees(s.fee_override)} (concession)` : null],
+            ['Hostel', s.hostel_fee ? `${rupees(s.hostel_fee)} per month` : 'Day scholar'],
             ['Message language', { te: 'తెలుగు', en: 'English', hi: 'हिन्दी' }[s.preferred_lang] || 'తెలుగు'],
             ...(s.status !== 'active' && s.leave_reason ? [['Left because', s.leave_reason]] : []),
             ['Notes', s.notes]
@@ -216,7 +219,9 @@ export default function StudentDetail() {
                 {s.invoices.map(i => (
                   <div key={i.id} className="flex items-center justify-between px-4 py-3">
                     <div>
-                      <p className="font-semibold">{i.period}</p>
+                      <p className="font-semibold">
+                        {i.period}{i.type === 'hostel' && <span className="font-bold text-saffron-700"> · Hostel</span>}
+                      </p>
                       <p className="text-xs text-ink-500">{i.description} · due {shortDate(i.due_date)}</p>
                     </div>
                     <div className="text-right">
@@ -278,7 +283,11 @@ export default function StudentDetail() {
                 setPay({ ...pay, invoice_id: e.target.value, amount: inv ? String(inv.amount) : pay.amount });
               }}>
               <option value="">General payment (no bill)</option>
-              {due.map(i => <option key={i.id} value={i.id}>{i.period} — {rupees(i.amount)} ({i.status})</option>)}
+              {due.map(i => (
+                <option key={i.id} value={i.id}>
+                  {i.period}{i.type === 'hostel' ? ' hostel' : ''}, {rupees(i.amount)} ({i.status})
+                </option>
+              ))}
             </select>
           </Field>
           <Field label="Amount (₹)">
@@ -358,11 +367,15 @@ export default function StudentDetail() {
               <input className="input" inputMode="decimal" value={edit.fee_override}
                 onChange={e => setEdit({ ...edit, fee_override: e.target.value })} />
             </Field>
-            <Field label="Target exam">
-              <input className="input" placeholder="AP Police Constable" value={edit.target_exam}
-                onChange={e => setEdit({ ...edit, target_exam: e.target.value })} />
+            <Field label="Hostel fee (₹ per month, blank = day scholar)">
+              <input className="input" inputMode="decimal" value={edit.hostel_fee}
+                onChange={e => setEdit({ ...edit, hostel_fee: e.target.value })} />
             </Field>
           </div>
+          <Field label="Target exam">
+            <input className="input" placeholder="AP Police Constable" value={edit.target_exam}
+              onChange={e => setEdit({ ...edit, target_exam: e.target.value })} />
+          </Field>
           <button className="btn-primary w-full">Save changes</button>
         </form>
       </Modal>

@@ -6,7 +6,7 @@ import { IconSearch, IconPlus, IconDownload, IconStudents, IconChevronRight } fr
 
 const blank = {
   name: '', gender: 'M', phone: '', guardian_name: '', guardian_phone: '', village: '',
-  dob: '', course_id: '', batch_id: '', height_cm: '', weight_kg: '', address: '', notes: ''
+  dob: '', course_id: '', batch_id: '', height_cm: '', weight_kg: '', hostel_fee: '', address: '', notes: ''
 };
 
 const initials = n => n.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
@@ -45,7 +45,7 @@ export default function Students() {
     setSaving(true);
     try {
       const payload = { ...form };
-      for (const k of ['course_id', 'batch_id', 'height_cm', 'weight_kg']) payload[k] = payload[k] ? Number(payload[k]) : null;
+      for (const k of ['course_id', 'batch_id', 'height_cm', 'weight_kg', 'hostel_fee']) payload[k] = payload[k] ? Number(payload[k]) : null;
       const res = await api.post('/students', payload);
       toast(`${form.name} admitted, ${res.admission_no}`);
       if (res.warning) toast(res.warning, 'error');
@@ -194,6 +194,9 @@ export default function Students() {
           </Field>
           <Field label="Weight (kg)">
             <input className="input" inputMode="decimal" value={form.weight_kg} onChange={e => setForm({ ...form, weight_kg: e.target.value })} />
+          </Field>
+          <Field label="Hostel fee (₹ per month)" hint="Leave blank if not staying in the hostel" className="sm:col-span-2">
+            <input className="input" inputMode="decimal" value={form.hostel_fee} onChange={e => setForm({ ...form, hostel_fee: e.target.value })} />
           </Field>
           <Field label="Address" className="sm:col-span-2">
             <input className="input" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />

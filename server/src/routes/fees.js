@@ -15,7 +15,8 @@ function refreshInvoiceStatus(invoiceId) {
   db.prepare('UPDATE invoices SET status = ? WHERE id = ?').run(status, invoiceId);
 }
 
-/* Generate the month's fee bills for every active student in one click */
+/* Generate the month's fee bills for every active student in one click.
+   Training and hostel are separate bills so the office can track them apart. */
 r.post('/generate', allow(...OFFICE), (req, res) => {
   const period = req.body?.period || today().slice(0, 7);
   const dueDay = String(req.body?.due_day || 10).padStart(2, '0');
@@ -25,23 +26,29 @@ r.post('/generate', allow(...OFFICE), (req, res) => {
     SELECT s.id, s.name, COALESCE(s.fee_override, c.fee_amount) AS fee_amount, c.fee_cycle, c.name AS course_name
     FROM students s JOIN courses c ON c.id = s.course_id
     WHERE s.status = 'active' AND COALESCE(s.fee_override, c.fee_amount) > 0`).all();
-  const stmt = db.prepare(`INSERT OR IGNORE INTO invoices (student_id, period, description, amount, due_date)
-    VALUES (?,?,?,?,?)`);
-  let created = 0;
+  const boarders = db.prepare(`
+    SELECT id, name, hostel_fee FROM students
+    WHERE status = 'active' AND COALESCE(hostel_fee, 0) > 0`).all();
+  const stmt = db.prepare(`INSERT OR IGNORE INTO invoices (student_id, period, description, amount, due_date, type)
+    VALUES (?,?,?,?,?,?)`);
+  let training = 0, hostel = 0;
   db.transaction(() => {
     for (const s of students) {
-      const info = stmt.run(s.id, period, `${s.course_name} fee for ${period}`, s.fee_amount, due_date);
-      created += info.changes;
+      training += stmt.run(s.id, period, `${s.course_name} fee for ${period}`, s.fee_amount, due_date, 'training').changes;
+    }
+    for (const s of boarders) {
+      hostel += stmt.run(s.id, period, `Hostel fee for ${period}`, s.hostel_fee, due_date, 'hostel').changes;
     }
   })();
-  res.json({ ok: true, period, due_date, considered: students.length, created });
+  res.json({ ok: true, period, due_date, considered: students.length, created: training + hostel, training, hostel });
 });
 
 r.get('/invoices', allow(...TRAINING), (req, res) => {
-  const { status, period, q, overdue } = req.query;
+  const { status, period, q, overdue, type } = req.query;
   const where = [], p = {};
   if (status) { where.push('i.status = @status'); p.status = status; }
   if (period) { where.push('i.period = @period'); p.period = period; }
+  if (type) { where.push('i.type = @type'); p.type = type; }
   if (overdue === '1') where.push("i.status IN ('unpaid','partial') AND i.due_date < date('now')");
   if (q) { where.push('(s.name LIKE @q OR s.admission_no LIKE @q OR s.phone LIKE @q)'); p.q = `%${q}%`; }
   const rows = db.prepare(`
@@ -56,14 +63,14 @@ r.get('/invoices', allow(...TRAINING), (req, res) => {
 });
 
 r.post('/invoices', allow(...OFFICE), (req, res) => {
-  const { student_id, period, amount, description, due_date } = req.body || {};
+  const { student_id, period, amount, description, due_date, type } = req.body || {};
   if (!student_id || !period || !amount) return res.status(400).json({ error: 'Student, period and amount are required' });
   try {
-    const info = db.prepare('INSERT INTO invoices (student_id, period, description, amount, due_date) VALUES (?,?,?,?,?)')
-      .run(student_id, period, description || null, amount, due_date || `${period}-10`);
+    const info = db.prepare('INSERT INTO invoices (student_id, period, description, amount, due_date, type) VALUES (?,?,?,?,?,?)')
+      .run(student_id, period, description || null, amount, due_date || `${period}-10`, type === 'hostel' ? 'hostel' : 'training');
     res.status(201).json({ id: info.lastInsertRowid });
   } catch {
-    res.status(400).json({ error: 'A bill for this student and period already exists' });
+    res.status(400).json({ error: 'A bill of this type already exists for this student and period' });
   }
 });
 
@@ -92,13 +99,17 @@ r.post('/payments', allow(...OFFICE), (req, res) => {
 });
 
 r.get('/payments', allow(...TRAINING), (req, res) => {
-  const { from, to } = req.query;
+  const { from, to, type } = req.query;
+  /* a payment inherits its type from the bill it settles; loose payments count as training */
   const rows = db.prepare(`
-    SELECT p.*, s.name AS student_name, s.admission_no, u.name AS collected_by_name
+    SELECT p.*, s.name AS student_name, s.admission_no, u.name AS collected_by_name,
+      CASE WHEN i.type = 'hostel' THEN 'hostel' ELSE 'training' END AS fee_type
     FROM payments p JOIN students s ON s.id = p.student_id
     LEFT JOIN users u ON u.id = p.collected_by
+    LEFT JOIN invoices i ON i.id = p.invoice_id
     WHERE (@from IS NULL OR p.paid_on >= @from) AND (@to IS NULL OR p.paid_on <= @to)
-    ORDER BY p.paid_on DESC, p.id DESC LIMIT 1000`).all({ from: from || null, to: to || null });
+      AND (@type IS NULL OR (CASE WHEN i.type = 'hostel' THEN 'hostel' ELSE 'training' END) = @type)
+    ORDER BY p.paid_on DESC, p.id DESC LIMIT 1000`).all({ from: from || null, to: to || null, type: type || null });
   res.json(rows);
 });
 
@@ -106,7 +117,8 @@ r.get('/payments', allow(...TRAINING), (req, res) => {
 r.get('/payments/:id/receipt', allow(...TRAINING), (req, res) => {
   const p = db.prepare(`
     SELECT p.*, s.name AS student_name, s.admission_no, s.phone, s.guardian_name,
-           c.name AS course_name, i.period, i.description
+           c.name AS course_name, i.period, i.description,
+           CASE WHEN i.type = 'hostel' THEN 'hostel' ELSE 'training' END AS fee_type
     FROM payments p JOIN students s ON s.id = p.student_id
     LEFT JOIN courses c ON c.id = s.course_id
     LEFT JOIN invoices i ON i.id = p.invoice_id

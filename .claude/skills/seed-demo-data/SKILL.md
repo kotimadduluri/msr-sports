@@ -30,7 +30,7 @@ Any randomness you add to seed generation must go through `rnd()`/`pick()`/`int(
 
 ## Constraints the generated data must respect
 - `students.admission_no` format `MSR<year><4-digit seq>` (e.g. `MSR20260001`) — never change it; people read it out over the phone.
-- `UNIQUE(student_id, date)` on attendance and `UNIQUE(student_id, period)` on invoices.
+- `UNIQUE(student_id, date)` on attendance and `UNIQUE(student_id, period, type)` on invoices (`type` = `training` | `hostel`).
 - Invoice `status` must be consistent with summed payments (unpaid/partial/paid; `waived` is manual).
 - All data is generated — no real person may appear (CLAUDE.md §9). Demo logins stay `9000000001`/`msr@2026` and `9000000002`/`office@2026`.
 - Placeholders that are knowingly fake (fees ₹800–₹2,000, phone `+91 90000 00000`, batch/coach names) live in `seed.js` — flag them, don't "fix" them with invented real values.
