@@ -105,14 +105,14 @@ export default function Attendance() {
     };
     try {
       const res = await api.post('/attendance/mark', payload);
-      toast(`Saved — ${res.saved} students marked`);
+      toast(`Saved, ${res.saved} students marked`);
       setDirty(false);
     } catch (e) {
       if (isNetworkError(e)) {
         writeQueue([...readQueue().filter(x => !(x.batch_id === payload.batch_id && x.date === payload.date)), payload]);
         setPending(readQueue().length);
         setDirty(false);
-        toast('No signal — saved on this phone, will sync when the network returns');
+        toast('No signal. Saved on this phone, will sync when the network returns');
       } else toast(e.message, 'error');
     }
     finally { setSaving(false); }
@@ -138,7 +138,7 @@ export default function Attendance() {
       {pending > 0 && (
         <p className="flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800">
           <IconAlert className="h-4 w-4 shrink-0" />
-          {pending} roll call{pending > 1 ? 's' : ''} saved on this phone — will sync when the network returns
+          {pending} roll call{pending > 1 ? 's' : ''} saved on this phone, will sync when the network returns
         </p>
       )}
 
@@ -148,7 +148,7 @@ export default function Attendance() {
       {view !== 'absentees' && (
         <div className="card grid gap-2 p-3 sm:grid-cols-2">
           <select className="input" value={batchId} aria-label="Batch" onChange={e => setBatchId(e.target.value)}>
-            {batches.map(b => <option key={b.id} value={b.id}>{b.name} — {b.start_time} ({b.student_count})</option>)}
+            {batches.map(b => <option key={b.id} value={b.id}>{b.name}, {b.start_time} ({b.student_count})</option>)}
           </select>
           {view === 'rollcall' && (
             <input type="date" className="input tnum" value={date} max={todayISO()} aria-label="Date"
@@ -218,7 +218,7 @@ export default function Attendance() {
 
           {/* what the session actually was — so a substitute coach can pick up tomorrow */}
           <div className="card flex gap-2 p-3">
-            <input className="input flex-1" placeholder="Session note — e.g. 400m repeats ×6, shot put drills"
+            <input className="input flex-1" placeholder="Session note, e.g. 400m repeats ×6, shot put drills"
               value={session} onChange={e => { setSession(e.target.value); setSessionSaved(false); }} />
             <button onClick={saveSession} disabled={!session.trim() || sessionSaved}
               className={sessionSaved ? 'btn-quiet' : 'btn-ghost'}>

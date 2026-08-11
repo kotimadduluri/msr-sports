@@ -101,7 +101,7 @@ export default function Settings() {
         <div className="flex items-center justify-between border-b border-ink-200 px-4 py-3">
           <div>
             <h2 className="font-bold">Staff & coach logins</h2>
-            <p className="text-xs text-ink-500">Coaches see students, attendance and performance — not fee edits.</p>
+            <p className="text-xs text-ink-500">Coaches see students, attendance and performance, not fee edits.</p>
           </div>
           {me?.role === 'admin' && <button onClick={() => setOpen(true)} className="btn-primary btn-sm"><IconPlus className="h-4 w-4" /> Add</button>}
         </div>
@@ -134,7 +134,7 @@ export default function Settings() {
         <h2 className="font-bold">Data backup</h2>
         <p className="mt-1 text-sm text-ink-500">
           The server keeps its own nightly backups. Download a full copy of the database once a week
-          and keep it somewhere safe — plus spreadsheet copies for the accountant.
+          and keep it somewhere safe, plus spreadsheet copies for the accountant.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {me?.role === 'admin' && (

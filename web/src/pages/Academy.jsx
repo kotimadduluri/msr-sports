@@ -92,7 +92,7 @@ export default function Academy() {
 
       {tab === 'wall' && (!selections ? <Loading rows={5} /> : selections.length === 0 ? (
         <Empty icon={<IconTrophy className="h-6 w-6" />} title="No selections recorded yet"
-          hint="Every student who clears an exam belongs here — it becomes the success wall on the website." />
+          hint="Every student who clears an exam belongs here. It becomes the success wall on the website." />
       ) : (
         <div className="card divide-y divide-ink-100">
           {selections.map(s => (
@@ -101,7 +101,7 @@ export default function Academy() {
                 <p className="font-semibold text-ink-900">{s.name}
                   {s.village && <span className="font-normal text-ink-500"> · {s.village}</span>}
                 </p>
-                <p className="text-sm text-ink-600">{s.exam} — {s.year}</p>
+                <p className="text-sm text-ink-600">{s.exam}, {s.year}</p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <PublishPill kind="selections" item={s} />
@@ -114,7 +114,7 @@ export default function Academy() {
 
       {tab === 'notices' && (!notices ? <Loading rows={4} /> : notices.length === 0 ? (
         <Empty title="No recruitment updates yet"
-          hint="Post notification dates here — they show on the website and make MSR the place students check first." />
+          hint="Post notification dates here. They show on the website and make MSR the place students check first." />
       ) : (
         <ul className="space-y-2">
           {notices.map(n => (
@@ -232,7 +232,7 @@ export default function Academy() {
               </select>
             </Field>
           </div>
-          <Field label={`Qualifying mark (${unitFor(bench.event) === 'sec' ? 'seconds — at or under' : unitFor(bench.event) === 'm' ? 'metres — at or over' : 'count — at or over'})`}>
+          <Field label={`Qualifying mark (${unitFor(bench.event) === 'sec' ? 'seconds, at or under' : unitFor(bench.event) === 'm' ? 'metres, at or over' : 'count, at or over'})`}>
             <input className="input tnum" inputMode="decimal" required value={bench.value}
               onChange={e => setBench({ ...bench, value: e.target.value })} />
           </Field>

@@ -104,7 +104,7 @@ export default function TestDay() {
           {EVENTS.map(e => <option key={e}>{e}</option>)}
         </select>
         <select className="input" value={batchId} aria-label="Batch" onChange={e => setBatchId(e.target.value)}>
-          {batches.map(b => <option key={b.id} value={b.id}>{b.name} — {b.start_time} ({b.student_count})</option>)}
+          {batches.map(b => <option key={b.id} value={b.id}>{b.name}, {b.start_time} ({b.student_count})</option>)}
         </select>
         <input type="date" className="input tnum" value={date} max={todayISO()} aria-label="Date"
           onChange={e => setDate(e.target.value)} />
@@ -178,7 +178,7 @@ export default function TestDay() {
 
           <button onClick={save} disabled={saving || !entries.length} className="btn-primary w-full">
             <IconCheck className="h-[18px] w-[18px]" />
-            {saving ? 'Saving…' : entries.length ? `Save ${entries.length} result${entries.length > 1 ? 's' : ''} — ${event}` : 'Enter results to save'}
+            {saving ? 'Saving…' : entries.length ? `Save ${entries.length} ${event} result${entries.length > 1 ? 's' : ''}` : 'Enter results to save'}
           </button>
         </>
       )}

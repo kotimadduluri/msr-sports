@@ -40,7 +40,7 @@ export default function Performance() {
 
       {events.length === 0 ? (
         <Empty icon={<IconTrophy className="h-6 w-6" />} title="No test records yet"
-          hint="Run a Test day — pick an event and a batch, and enter every result in one list." />
+          hint="Run a Test day: pick an event and a batch, and enter every result in one list." />
       ) : (
         <>
           <div className="grid gap-2 sm:grid-cols-2">

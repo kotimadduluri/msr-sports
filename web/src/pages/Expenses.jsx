@@ -41,7 +41,7 @@ export default function Expenses() {
 
   return (
     <div className="space-y-4">
-      <PageHead title="Expenses" sub="Rent, salaries, equipment — so the month shows a real profit line"
+      <PageHead title="Expenses" sub="Rent, salaries, equipment, so the month shows a real profit line"
         actions={<>
           <button onClick={() => api.download('/reports/export/expenses', 'msr-expenses.csv')} className="btn-ghost">
             <IconDownload className="h-[18px] w-[18px]" /><span className="hidden sm:inline">Export</span>
@@ -75,14 +75,14 @@ export default function Expenses() {
 
           {data.rows.length === 0 ? (
             <Empty title="Nothing recorded this month"
-              hint="Add rent, salaries and every other cost — the profit line above only means something when this list is complete." />
+              hint="Add rent, salaries and every other cost. The profit line above only means something when this list is complete." />
           ) : (
             <div className="card divide-y divide-ink-100">
               {data.rows.map(e => (
                 <div key={e.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="font-semibold capitalize text-ink-900">{e.category}
-                      {e.description && <span className="font-normal text-ink-600"> — {e.description}</span>}
+                    <p className="font-semibold text-ink-900"><span className="capitalize">{e.category}</span>
+                      {e.description && <span className="font-normal text-ink-600">, {e.description}</span>}
                     </p>
                     <p className="text-xs text-ink-500">{shortDate(e.date)}{e.recorded_by_name ? ` · ${e.recorded_by_name}` : ''}</p>
                   </div>

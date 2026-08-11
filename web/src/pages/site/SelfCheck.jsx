@@ -86,7 +86,7 @@ function CheckPage() {
 
         {isDemo && (
           <p className="mt-3 rounded-xl bg-saffron-50 px-4 py-2.5 text-center text-xs font-semibold text-saffron-800">
-            Demo student — <span className="font-mono">MSR20260119</span> · 06 Sep 2003 (pre-filled, just press the button)
+            Demo student: <span className="font-mono">MSR20260119</span> · 06 Sep 2003 (pre-filled, just press the button)
           </p>
         )}
 
@@ -104,13 +104,13 @@ function CheckPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="card p-4">
-                <p className="text-2xs font-semibold uppercase tracking-wider text-ink-500">{L.check.attendance} — {L.check.thisMonth}</p>
+                <p className="text-2xs font-semibold uppercase tracking-wider text-ink-500">{L.check.attendance}, {L.check.thisMonth}</p>
                 <p className="mt-1 font-display text-3xl font-bold text-msr-800">
                   {d.attendance.month_pct === null ? '—' : `${d.attendance.month_pct}%`}
                 </p>
               </div>
               <div className="card p-4">
-                <p className="text-2xs font-semibold uppercase tracking-wider text-ink-500">{L.check.attendance} — {L.check.overall}</p>
+                <p className="text-2xs font-semibold uppercase tracking-wider text-ink-500">{L.check.attendance}, {L.check.overall}</p>
                 <p className="mt-1 font-display text-3xl font-bold text-msr-800">
                   {d.attendance.all_pct === null ? '—' : `${d.attendance.all_pct}%`}
                 </p>

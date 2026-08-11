@@ -160,7 +160,7 @@ export function HeatStrip({ days }) {
   return (
     <div className="flex flex-wrap gap-1">
       {days.map(d => (
-        <span key={d.date} title={`${d.date} — ${d.status}`}
+        <span key={d.date} title={`${d.date}: ${d.status}`}
           className={`h-6 w-6 rounded-md ${tone(d.status)} opacity-90 transition hover:opacity-100`} />
       ))}
     </div>

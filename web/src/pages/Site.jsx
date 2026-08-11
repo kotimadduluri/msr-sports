@@ -131,7 +131,8 @@ function SitePage() {
             <LangPicker className="hidden md:inline-flex" />
             <ScrollLink to="join" className="btn-primary btn-sm hidden sm:inline-flex">{L.actions.joinNow}</ScrollLink>
             <Link to="/login" className="hidden text-sm font-semibold text-ink-500 hover:text-msr-800 lg:block">{L.actions.staffLogin}</Link>
-            <button onClick={() => setMenu(v => !v)} className="rounded-xl p-2 text-ink-600 md:hidden" aria-label="Menu" aria-expanded={menu}>
+            <button onClick={() => setMenu(v => !v)} aria-label="Menu" aria-expanded={menu}
+              className="rounded-xl p-2 text-ink-600 transition duration-150 ease-swift hover:bg-ink-100 active:scale-95 md:hidden">
               {menu ? <IconClose /> : <IconMenu />}
             </button>
           </div>

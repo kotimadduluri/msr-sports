@@ -220,7 +220,7 @@ export default function Fees() {
       <Modal open={remindOpen} onClose={() => setRemindOpen(false)} title="Remind every overdue family">
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm text-ink-600">Tap each family — WhatsApp opens with the message ready to send.</p>
+            <p className="text-sm text-ink-600">Tap each family. WhatsApp opens with the message ready to send.</p>
             <MsgLang />
           </div>
           <div className="max-h-80 space-y-1.5 overflow-y-auto">

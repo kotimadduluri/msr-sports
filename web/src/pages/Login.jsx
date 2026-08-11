@@ -66,7 +66,7 @@ export default function Login() {
           </button>
 
           <p className="rounded-xl bg-ink-50 px-3 py-2.5 text-center text-xs text-ink-500">
-            Demo login — <span className="font-semibold text-ink-700">9000000001</span> / <span className="font-semibold text-ink-700">msr@2026</span>
+            Demo login: <span className="font-semibold text-ink-700">9000000001</span> / <span className="font-semibold text-ink-700">msr@2026</span>
           </p>
         </form>
 

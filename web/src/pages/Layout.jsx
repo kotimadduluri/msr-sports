@@ -78,7 +78,7 @@ export default function Layout() {
           <span className="text-[15px] font-extrabold text-ink-900">{title}</span>
         </div>
         <button onClick={() => setMenu(v => !v)} aria-label="Menu" aria-expanded={menu}
-          className="rounded-xl p-2 text-ink-600 transition hover:bg-ink-100">
+          className="rounded-xl p-2 text-ink-600 transition duration-150 ease-swift hover:bg-ink-100 active:scale-95">
           {menu ? <IconClose /> : <IconMenu />}
         </button>
       </header>
@@ -98,7 +98,7 @@ export default function Layout() {
             </div>
             <button onClick={signOut}
               className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-rose-50 py-3 text-sm font-semibold text-critical">
-              <IconLogout className="h-4 w-4" /> Sign out — {user?.name}
+              <IconLogout className="h-4 w-4" /> Sign out ({user?.name})
             </button>
           </div>
         </>

@@ -101,7 +101,7 @@ export default function StudentDetail() {
   async function sharePdf() {
     if (!built) return;
     const how = await shareProgressCard(built);
-    if (how === 'downloaded') toast('PDF saved — attach it on WhatsApp or anywhere');
+    if (how === 'downloaded') toast('PDF saved. Attach it on WhatsApp or anywhere');
   }
 
   const reminder = () => msg('feeReminder', s, s.balance, null, upi);
@@ -153,7 +153,7 @@ export default function StudentDetail() {
 
       {s.readiness?.length > 0 && (
         <div className="card p-4">
-          <p className="mb-3 font-bold text-ink-900">Where they stand{s.target_exam ? ` — ${s.target_exam}` : ''}</p>
+          <p className="mb-3 font-bold text-ink-900">Where they stand{s.target_exam ? ` for ${s.target_exam}` : ''}</p>
           <div className="grid gap-2 sm:grid-cols-2">
             {s.readiness.map(r => {
               const t = r.targets[0];
@@ -399,7 +399,7 @@ export default function StudentDetail() {
               </div>
             </div>
             <p className="text-center text-xs text-ink-500">
-              Share PDF opens your phone's share sheet — send the card to WhatsApp, or anywhere else.
+              Share PDF opens your phone's share sheet. Send the card to WhatsApp, or anywhere else.
             </p>
           </div>
         )}

@@ -21,20 +21,20 @@ const T = {
     absence: ({ name }, absents) =>
       `నమస్తే, MSR స్పోర్ట్స్ అకాడమీ, చీరాల. ${name} ఈ వారం ${absents} ట్రైనింగ్ సెషన్లకు రాలేదు. దయచేసి క్రమం తప్పకుండా పంపించగలరు. ఏదైనా సమస్య ఉంటే మాకు చెప్పండి.`,
     enquiryReply: (name, interest) =>
-      `నమస్తే ${name}, MSR స్పోర్ట్స్ అకాడమీ, చీరాల. ${interest || 'మా శిక్షణ'} గురించి మీ ఎంక్వైరీకి ధన్యవాదాలు. మా బ్యాచ్‌లు రోజూ ఉదయం 5:30కి మొదలవుతాయి. ఒకసారి గ్రౌండ్ చూడటానికి రండి — సమయం ఎప్పుడు కుదురుతుంది?`,
+      `నమస్తే ${name}, MSR స్పోర్ట్స్ అకాడమీ, చీరాల. ${interest || 'మా శిక్షణ'} గురించి మీ ఎంక్వైరీకి ధన్యవాదాలు. మా బ్యాచ్‌లు రోజూ ఉదయం 5:30కి మొదలవుతాయి. ఒకసారి గ్రౌండ్ చూడటానికి రండి. సమయం ఎప్పుడు కుదురుతుంది?`,
     progressCard: card => {
       const w = STATUS_WORD.te;
       const lines = [
-        `MSR స్పోర్ట్స్ అకాడమీ — నెలవారీ ప్రగతి (${card.month})`,
+        `MSR స్పోర్ట్స్ అకాడమీ, నెలవారీ ప్రగతి (${card.month})`,
         `విద్యార్థి: ${card.student.name} (${card.student.admission_no})`,
         `హాజరు: ${card.attendance.pct === null ? '—' : card.attendance.pct + '%'} (${card.attendance.present}/${card.attendance.total})`
       ];
       for (const e of card.events) {
         const t = e.targets[0];
-        lines.push(`${e.event}: ${fmtVal(e.value, e.unit)}${t ? ` — లక్ష్యం ${fmtVal(t.target, t.unit)} (${t.exam}: ${w[t.status]})` : ''}`);
+        lines.push(`${e.event}: ${fmtVal(e.value, e.unit)}${t ? `, లక్ష్యం ${fmtVal(t.target, t.unit)} (${t.exam}: ${w[t.status]})` : ''}`);
       }
       if (card.balance > 0) lines.push(`ఫీజు బకాయి: ${rupees(card.balance)}`);
-      lines.push('ధన్యవాదాలు — MSR స్పోర్ట్స్ అకాడమీ, చీరాల');
+      lines.push('ధన్యవాదాలు, MSR స్పోర్ట్స్ అకాడమీ, చీరాల');
       return lines.join('\n');
     }
   },
@@ -48,16 +48,16 @@ const T = {
     progressCard: card => {
       const w = STATUS_WORD.en;
       const lines = [
-        `MSR Sports Academy — monthly progress (${card.month})`,
+        `MSR Sports Academy, monthly progress (${card.month})`,
         `Student: ${card.student.name} (${card.student.admission_no})`,
         `Attendance: ${card.attendance.pct === null ? '—' : card.attendance.pct + '%'} (${card.attendance.present}/${card.attendance.total})`
       ];
       for (const e of card.events) {
         const t = e.targets[0];
-        lines.push(`${e.event}: ${fmtVal(e.value, e.unit)}${t ? ` — target ${fmtVal(t.target, t.unit)} (${t.exam}: ${w[t.status]})` : ''}`);
+        lines.push(`${e.event}: ${fmtVal(e.value, e.unit)}${t ? `, target ${fmtVal(t.target, t.unit)} (${t.exam}: ${w[t.status]})` : ''}`);
       }
       if (card.balance > 0) lines.push(`Fee balance: ${rupees(card.balance)}`);
-      lines.push('Thank you — MSR Sports Academy, Chirala');
+      lines.push('Thank you, MSR Sports Academy, Chirala');
       return lines.join('\n');
     }
   },
@@ -71,16 +71,16 @@ const T = {
     progressCard: card => {
       const w = STATUS_WORD.hi;
       const lines = [
-        `MSR स्पोर्ट्स अकादमी — मासिक प्रगति (${card.month})`,
+        `MSR स्पोर्ट्स अकादमी, मासिक प्रगति (${card.month})`,
         `छात्र: ${card.student.name} (${card.student.admission_no})`,
         `हाज़िरी: ${card.attendance.pct === null ? '—' : card.attendance.pct + '%'} (${card.attendance.present}/${card.attendance.total})`
       ];
       for (const e of card.events) {
         const t = e.targets[0];
-        lines.push(`${e.event}: ${fmtVal(e.value, e.unit)}${t ? ` — लक्ष्य ${fmtVal(t.target, t.unit)} (${t.exam}: ${w[t.status]})` : ''}`);
+        lines.push(`${e.event}: ${fmtVal(e.value, e.unit)}${t ? `, लक्ष्य ${fmtVal(t.target, t.unit)} (${t.exam}: ${w[t.status]})` : ''}`);
       }
       if (card.balance > 0) lines.push(`फ़ीस बकाया: ${rupees(card.balance)}`);
-      lines.push('धन्यवाद — MSR स्पोर्ट्स अकादमी, चीराला');
+      lines.push('धन्यवाद, MSR स्पोर्ट्स अकादमी, चीराला');
       return lines.join('\n');
     }
   }

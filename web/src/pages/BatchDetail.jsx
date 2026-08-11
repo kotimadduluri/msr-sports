@@ -91,7 +91,7 @@ export default function BatchDetail() {
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Students" value={`${b.student_count}/${b.capacity}`}
           tone={b.student_count >= b.capacity ? 'bad' : b.student_count >= 0.8 * b.capacity ? 'warn' : 'default'} />
-        <Stat label="Attendance, 30 days" value={b.att30_pct != null ? `${b.att30_pct}%` : '–'}
+        <Stat label="Attendance, 30 days" value={b.att30_pct != null ? `${b.att30_pct}%` : '—'}
           tone={b.att30_pct == null ? 'default' : b.att30_pct >= 85 ? 'good' : b.att30_pct >= 70 ? 'warn' : 'bad'} />
         <Stat label="Fees due" value={rupees(b.due_total || 0)} tone={b.due_total > 0 ? 'warn' : 'good'} />
       </div>
