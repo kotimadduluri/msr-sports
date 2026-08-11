@@ -111,7 +111,10 @@ export default function Layout() {
       )}
 
       <main className="mx-auto max-w-6xl px-4 pb-28 pt-4 sm:px-6 lg:ml-64 lg:max-w-none lg:px-8 lg:pb-12 lg:pt-8">
-        <Outlet />
+        {/* keyed on the path so each screen rises in instead of hard-swapping */}
+        <div key={loc.pathname} className="animate-page">
+          <Outlet />
+        </div>
       </main>
 
       {/* ---------- mobile tab bar ---------- */}

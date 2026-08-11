@@ -47,13 +47,13 @@
     @apply rounded-2xl bg-white shadow-card;
     box-shadow: 0 0 0 1px var(--hairline), 0 1px 2px rgb(15 28 54 / .05);
   }
-  .card-hover { @apply transition duration-200 hover:shadow-lift; }
+  .card-hover { @apply transition-[transform,box-shadow] duration-200 ease-swift hover:shadow-lift; }
 
   /* ---------- buttons: 44px min height for thumbs ---------- */
   .btn {
     @apply inline-flex min-h-[2.75rem] select-none items-center justify-center gap-2 rounded-xl px-4
-           text-sm font-semibold leading-none transition duration-150
-           active:scale-[.985] disabled:pointer-events-none disabled:opacity-50;
+           text-sm font-semibold leading-none transition duration-150 ease-swift
+           active:scale-[.97] disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-sm { @apply min-h-[2.25rem] rounded-lg px-3 text-[13px]; }
   .btn-primary { @apply btn bg-msr-800 text-white shadow-card hover:bg-msr-900; }
@@ -81,7 +81,8 @@
 
   /* segmented control */
   .seg { @apply flex gap-1 rounded-xl bg-ink-100 p-1; }
-  .seg-item { @apply min-h-[2.25rem] flex-1 whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold text-ink-600 transition; }
+  .seg-item { @apply min-h-[2.25rem] flex-1 whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold text-ink-600
+              transition duration-150 ease-swift active:scale-[.96]; }
   .seg-item-on { @apply bg-white text-ink-900 shadow-card; }
 
   .skeleton { @apply relative overflow-hidden rounded-lg bg-ink-100; }
@@ -104,6 +105,24 @@
      The global prefers-reduced-motion rule collapses the transition to nothing. */
   .reveal { opacity: 0; transform: translateY(22px) scale(.985); transition: opacity .6s cubic-bezier(.16,1,.3,1), transform .6s cubic-bezier(.16,1,.3,1); }
   .reveal.is-in { opacity: 1; transform: none; }
+
+  /* one-shot entrance cascade: direct children fade up 40ms apart. Use only on
+     content that mounts once (a stats row), never on lists that re-render as
+     the user types — the replay reads as flicker, not polish. */
+  /* fill backwards, not both: after the entrance the animation must release
+     the transform, or it would override the card-hover lift forever */
+  .stagger > * { animation: fade-up .3s cubic-bezier(.23,1,.32,1) backwards; }
+  .stagger > *:nth-child(2) { animation-delay: 40ms; }
+  .stagger > *:nth-child(3) { animation-delay: 80ms; }
+  .stagger > *:nth-child(4) { animation-delay: 120ms; }
+  .stagger > *:nth-child(5) { animation-delay: 160ms; }
+  .stagger > *:nth-child(6) { animation-delay: 200ms; }
+  .stagger > *:nth-child(n+7) { animation-delay: 240ms; }
+}
+
+/* hover physics stay off touch screens: a tap must not leave a card floating */
+@media (hover: hover) and (pointer: fine) {
+  .card-hover:hover { transform: translateY(-2px); }
 }
 
 /* Printing receipts and progress cards: <PrintArea> (components.jsx) portals

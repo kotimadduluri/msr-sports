@@ -52,7 +52,7 @@ export default function Dashboard() {
         )}
       />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="stagger grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Active students" value={d.students.active} icon={<IconStudents />}
           sub={`${d.students.men} men · ${d.students.women} women`} />
         <Stat label="Attendance today" icon={<IconCheck />}

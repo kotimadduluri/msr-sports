@@ -211,10 +211,10 @@ export function Modal({ open, onClose, title, children, wide }) {
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 backdrop-blur-[2px] sm:items-center sm:p-4"
+    <div className="animate-fade fixed inset-0 z-50 flex items-end justify-center bg-ink-900/40 backdrop-blur-[2px] sm:items-center sm:p-4"
       onMouseDown={onClose} role="dialog" aria-modal="true" aria-label={title}>
       <div onMouseDown={e => e.stopPropagation()}
-        className={`animate-fade-up w-full ${wide ? 'sm:max-w-3xl' : 'sm:max-w-lg'} max-h-[92vh] overflow-y-auto
+        className={`animate-sheet sm:animate-pop w-full ${wide ? 'sm:max-w-3xl' : 'sm:max-w-lg'} max-h-[92vh] overflow-y-auto
                     rounded-t-3xl bg-white p-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] shadow-pop sm:rounded-2xl sm:pb-5`}>
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-ink-200 sm:hidden" />
         <div className="mb-4 flex items-start justify-between gap-3">

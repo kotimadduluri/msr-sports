@@ -41,7 +41,7 @@ export default function Login() {
           <p className="mt-1 text-sm text-msr-200">Chirala · Andhra Pradesh</p>
         </div>
 
-        <form onSubmit={submit} className="card space-y-4 p-6">
+        <form onSubmit={submit} className="animate-pop card space-y-4 p-6">
           <div>
             <label className="label" htmlFor="u">Phone or email</label>
             <input id="u" className="input" autoComplete="username" inputMode="text" enterKeyHint="next"

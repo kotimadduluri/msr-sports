@@ -83,10 +83,26 @@ function Footer() {
   );
 }
 
+/* True once the page has scrolled past the very top. Watches a 1px sentinel
+   with IntersectionObserver, so no scroll listener runs per frame. */
+function useScrolled() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const el = document.createElement('div');
+    el.style.cssText = 'position:absolute;top:0;height:1px;width:1px;pointer-events:none;';
+    document.body.prepend(el);
+    const io = new IntersectionObserver(([e]) => setScrolled(!e.isIntersecting));
+    io.observe(el);
+    return () => { io.disconnect(); el.remove(); };
+  }, []);
+  return scrolled;
+}
+
 function SitePage() {
   const L = useT();
   const [courses, setCourses] = useState([]);
   const [menu, setMenu] = useState(false);
+  const scrolled = useScrolled();
 
   useEffect(() => { api.get('/enquiries/public/courses').then(setCourses).catch(() => {}); }, []);
   const list = courses.length ? courses : FALLBACK;
@@ -95,7 +111,8 @@ function SitePage() {
 
   return (
     <div className="bg-white">
-      <header className="sticky top-0 z-40 border-b border-ink-200/70 bg-white/90 backdrop-blur-md">
+      <header className={`sticky top-0 z-40 border-b border-ink-200/70 bg-white/90 backdrop-blur-md
+        transition-shadow duration-200 ${scrolled ? 'shadow-lift' : ''}`}>
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <ScrollLink to="top" className="flex items-center gap-2.5">
             <Logo className="h-9 w-9" />

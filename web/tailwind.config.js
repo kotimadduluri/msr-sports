@@ -42,8 +42,16 @@ export default {
         lift: '0 4px 12px rgba(15,28,54,.08), 0 1px 3px rgba(15,28,54,.05)',
         pop: '0 16px 40px -12px rgba(15,28,54,.28)'
       },
+      /* one easing voice for the whole product: a strong ease-out for things
+         that enter or respond, and the iOS drawer curve for the phone sheet */
+      transitionTimingFunction: {
+        swift: 'cubic-bezier(0.23, 1, 0.32, 1)'
+      },
       keyframes: {
         'fade-up': { '0%': { opacity: 0, transform: 'translateY(6px)' }, '100%': { opacity: 1, transform: 'none' } },
+        fade: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+        'sheet-up': { '0%': { opacity: 0, transform: 'translateY(28px)' }, '100%': { opacity: 1, transform: 'none' } },
+        'pop-in': { '0%': { opacity: 0, transform: 'scale(.96)' }, '100%': { opacity: 1, transform: 'none' } },
         shimmer: { '100%': { transform: 'translateX(100%)' } },
         float: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-8px)' } },
         marquee: { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } },
@@ -56,6 +64,13 @@ export default {
       },
       animation: {
         'fade-up': 'fade-up .28s cubic-bezier(.22,1,.36,1) both',
+        fade: 'fade .2s ease-out both',
+        /* modal on a phone: slides up like a sheet (iOS drawer curve) */
+        sheet: 'sheet-up .34s cubic-bezier(.32,.72,0,1) both',
+        /* modal on desktop: scales in from just under full size */
+        pop: 'pop-in .22s cubic-bezier(.23,1,.32,1) both',
+        /* portal route change: barely-there rise so screens never hard-swap */
+        page: 'fade-up .22s cubic-bezier(.23,1,.32,1) both',
         shimmer: 'shimmer 1.6s infinite',
         float: 'float 6s ease-in-out infinite',
         marquee: 'marquee 30s linear infinite',
