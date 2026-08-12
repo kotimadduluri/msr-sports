@@ -263,7 +263,7 @@ function WeekGrid({ batches }) {
 
   if (!active.length) return <p className="card p-6 text-sm text-ink-500">No batches yet. Create the first one.</p>;
 
-  const HOUR = 72, GAP = 36;
+  const HOUR = 52, GAP = 36;
   const first = Math.floor(Math.min(...active.map(b => toMin(b.start_time))) / 60) * 60;
   const last = Math.ceil(Math.max(...active.map(b => toMin(b.end_time))) / 60) * 60;
 
