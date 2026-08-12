@@ -223,6 +223,12 @@ const hLabel = min => {
   return `${((h + 11) % 12) + 1} ${h >= 12 ? 'PM' : 'AM'}`;
 };
 
+/* Chip colours for the week calendar, one per programme, assigned by course id
+   so they never shuffle. Deep tones from the avatar palette — white text clears
+   AA on all six. Identity colour, not status: the name is always printed. */
+const COURSE_INK = ['#223d76', '#1d5c3a', '#7b3b0d', '#463a6b', '#7a2e2e', '#215e66'];
+const chipColor = b => (b.course_id ? COURSE_INK[b.course_id % COURSE_INK.length] : '#3d4c66');
+
 /* The whole week as a calendar: day columns, hour rows, each batch a block at
    its real slot. Idle midday hours collapse into one slim band so the morning
    and evening grounds sit close together. */
@@ -275,52 +281,72 @@ function WeekGrid({ batches }) {
     .flatMap(s => Array.from({ length: (s.end - s.start) / 60 + 1 }, (_, i) => s.start + i * 60)))]
     .filter(h => !merged.some(s => s.type === 'gap' && (s.start === h || s.end === h)));
 
-  /* Per day: sort by start, then group batches whose times overlap. A pair
-     shares the column side by side; three or more become one stacked list
-     block, because five slivers of a column tell nobody anything. */
+  /* Per day: the calendar-app collision layout. Batches that overlap in time
+     form a collision group; the group splits into columns (first free column
+     by end time), nothing may visually overlap, and each chip then widens
+     rightward across columns that stay free for its whole duration — the same
+     rules Google Calendar and Outlook use. */
   const cols = DAYS.map(day => {
     const list = active.filter(b => (b.days || '').includes(day))
-      .sort((a, b) => toMin(a.start_time) - toMin(b.start_time));
-    const placed = [];
-    let cluster = [], clusterStart = 0, clusterEnd = -1;
+      .sort((a, b) => toMin(a.start_time) - toMin(b.start_time) || toMin(b.end_time) - toMin(a.end_time));
+    const chips = [];
+    let cluster = [], clusterEnd = -1;
     const flush = () => {
-      if (cluster.length <= 2) {
-        cluster.forEach((b, lane) => placed.push({ kind: 'block', b, lane, lanes: cluster.length }));
-      } else {
-        placed.push({ kind: 'stack', items: cluster, start: clusterStart, end: clusterEnd });
-      }
+      const colEnds = [];
+      const placed = cluster.map(b => {
+        let col = colEnds.findIndex(e => e <= toMin(b.start_time));
+        if (col === -1) { col = colEnds.length; colEnds.push(0); }
+        colEnds[col] = toMin(b.end_time);
+        return { b, col };
+      });
+      placed.forEach(p => {
+        let span = 1;
+        while (p.col + span < colEnds.length && !placed.some(q =>
+          q.col === p.col + span &&
+          toMin(q.b.start_time) < toMin(p.b.end_time) && toMin(q.b.end_time) > toMin(p.b.start_time)
+        )) span++;
+        chips.push({ ...p, nCols: colEnds.length, span });
+      });
       cluster = [];
     };
     list.forEach(b => {
       if (cluster.length && toMin(b.start_time) >= clusterEnd) flush();
-      if (!cluster.length) clusterStart = toMin(b.start_time);
       cluster.push(b);
       clusterEnd = Math.max(clusterEnd, toMin(b.end_time));
     });
     if (cluster.length) flush();
-    return { day, placed };
+    return { day, chips };
   });
 
   const now = new Date();
   const todayIdx = (now.getDay() + 6) % 7;
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const nowVisible = merged.some(s => s.type === 'open' && nowMin >= s.start && nowMin < s.end);
+  /* This week's dates, Monday first, for the day headers. */
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - todayIdx);
+  const dates = DAYS.map((_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d.getDate();
+  });
+  const legend = [...new Map(active.filter(b => b.course_id && b.course_name)
+    .map(b => [b.course_id, b.course_name])).entries()];
 
   return (
     <div className="card overflow-x-auto">
-      <div className="min-w-[54rem] pb-3">
+      <div className="min-w-[58rem] pb-3">
         <div className="grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-ink-100">
           <div aria-hidden="true" />
           {DAYS.map((d, i) => (
-            <div key={d} className={`relative border-l border-ink-100 py-3 text-center ${i === todayIdx ? 'bg-msr-50/50' : ''}`}>
-              <p className={`text-2xs font-bold uppercase tracking-widest ${i === todayIdx ? 'text-msr-900' : 'text-ink-400'}`}>{d}</p>
-              {i === todayIdx
-                ? <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-saffron-600">Today</p>
-                : <p className="mt-0.5 text-[10px] font-semibold text-ink-300 tnum">
-                    {(n => n ? `${n} ${n === 1 ? 'batch' : 'batches'}` : 'Rest day')(
-                      cols[i].placed.reduce((a, x) => a + (x.kind === 'stack' ? x.items.length : 1), 0))}
-                  </p>}
-              {i === todayIdx && <span className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-saffron-500" aria-hidden="true" />}
+            <div key={d} className={`border-l border-ink-100 py-2.5 text-center ${i === todayIdx ? 'bg-msr-50/50' : ''}`}>
+              <p className={`text-[10px] font-bold uppercase tracking-widest ${i === todayIdx ? 'text-saffron-600' : 'text-ink-400'}`}>{d}</p>
+              <p className={`mx-auto mt-1 flex h-8 w-8 items-center justify-center rounded-full font-display text-lg font-bold tnum ${
+                i === todayIdx
+                  ? 'bg-saffron-500 text-white shadow-[0_1px_3px_rgba(15,28,54,.25)]'
+                  : cols[i].chips.length ? 'text-ink-800' : 'text-ink-300'}`}>
+                {dates[i]}
+              </p>
             </div>
           ))}
         </div>
@@ -341,61 +367,46 @@ function WeekGrid({ batches }) {
             )}
           </div>
 
-          {cols.map(({ day, placed }, i) => (
+          {cols.map(({ day, chips }, i) => (
             <div key={day}
               className={`relative border-l border-ink-100 ${
-                i === todayIdx ? 'bg-msr-50/50' : placed.length === 0 ? 'bg-ink-50/60' : ''}`}
+                i === todayIdx ? 'bg-msr-50/50' : chips.length === 0 ? 'bg-ink-50/60' : ''}`}
               style={{ height: totalH }}>
               {marks.map(h => yOf(h) > 0 && yOf(h) < totalH && (
                 <span key={h} className="absolute inset-x-0 border-t border-ink-100/70" style={{ top: yOf(h) }} aria-hidden="true" />
               ))}
 
-              {placed.map(item => {
-                if (item.kind === 'stack') {
-                  const top = yOf(item.start);
-                  const height = yOf(item.end) - top;
-                  return (
-                    <div key={`s${item.start}`}
-                      className="absolute flex flex-col divide-y divide-ink-100/60 overflow-hidden rounded-lg border-l-[3px] border-msr-500 bg-white shadow-[0_1px_2px_rgba(15,28,54,.06)] ring-1 ring-ink-900/[.06]"
-                      style={{ top: top + 1, height: height - 2, left: 3, width: 'calc(100% - 6px)' }}>
-                      {item.items.map(b => {
-                        const live = i === todayIdx && liveNow(b);
-                        return (
-                          <Link key={b.id} to={`/app/batches/${b.id}`}
-                            title={`${b.name}, ${b.start_time}–${b.end_time}${b.coach_name ? `, ${b.coach_name}` : ''}`}
-                            className={`flex min-h-0 flex-1 items-center gap-1 px-1.5 text-[10px] leading-tight transition ${
-                              live ? 'bg-good-50 text-good-700 hover:bg-good-100' : 'text-ink-900 hover:bg-msr-50'}`}>
-                            <span className="shrink-0 font-semibold text-ink-400 tnum">{t12(b.start_time)[0]}</span>
-                            <span className="truncate font-bold">{b.name}</span>
-                            {live && <span className="h-1.5 w-1.5 shrink-0 self-center animate-pulse rounded-full bg-good" aria-hidden="true" />}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  );
-                }
-                const { b, lane, lanes } = item;
+              {chips.map(({ b, col, nCols, span }) => {
                 const top = yOf(toMin(b.start_time));
-                const height = Math.max(24, yOf(toMin(b.end_time)) - top);
+                const height = Math.max(22, yOf(toMin(b.end_time)) - top);
                 const live = i === todayIdx && liveNow(b);
+                const widthPct = (100 / nCols) * span;
+                const wide = widthPct >= 45;
                 return (
                   <Link key={b.id} to={`/app/batches/${b.id}`}
                     title={`${b.name}, ${b.start_time}–${b.end_time}${b.coach_name ? `, ${b.coach_name}` : ''}`}
-                    className={`absolute overflow-hidden rounded-lg border-l-[3px] px-1.5 py-1 shadow-[0_1px_2px_rgba(15,28,54,.06)] ring-1 transition duration-150 ease-swift hover:z-10 hover:-translate-y-px hover:shadow-lift ${
-                      live ? 'border-good bg-good-50/80 ring-good/20' : 'border-msr-500 bg-white ring-ink-900/[.06]'}`}
+                    className="absolute overflow-hidden rounded-md text-white ring-1 ring-white transition duration-150 ease-swift hover:z-30 hover:shadow-lift hover:brightness-110"
                     style={{
                       top: top + 1, height: height - 2,
-                      left: `calc(${(100 / lanes) * lane}% + 3px)`,
-                      width: `calc(${100 / lanes}% - 6px)`
+                      left: `calc(${(100 / nCols) * col}% + 1px)`,
+                      width: `calc(${widthPct}% - 3px)`,
+                      backgroundColor: chipColor(b),
+                      backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,0) 45%)'
                     }}>
-                    <p className={`flex items-center gap-1 truncate text-[11px] font-bold leading-tight ${live ? 'text-good-700' : 'text-ink-900'}`}>
-                      {live && <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-good" aria-hidden="true" />}
-                      <span className="truncate">{b.name}</span>
-                    </p>
-                    <p className="truncate text-[10px] text-ink-500 tnum">{b.start_time}–{b.end_time}</p>
-                    {height >= 60 && b.coach_name && (
-                      <p className="mt-0.5 truncate text-[10px] text-ink-500">{b.coach_name}</p>
-                    )}
+                    <div className="px-1.5 py-1">
+                      <p className="text-[11px] font-semibold leading-[1.15]">
+                        {live && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white align-middle" aria-hidden="true" />}
+                        {b.name}
+                      </p>
+                      {wide && height >= 42 && (
+                        <p className="mt-px text-[10px] leading-tight text-white/75 tnum">
+                          {t12(b.start_time)[0]} – {t12(b.end_time)[0]} {t12(b.end_time)[1]}
+                        </p>
+                      )}
+                      {wide && height >= 64 && b.coach_name && (
+                        <p className="text-[10px] leading-tight text-white/70">{b.coach_name}</p>
+                      )}
+                    </div>
                   </Link>
                 );
               })}
@@ -420,6 +431,17 @@ function WeekGrid({ batches }) {
             </div>
           ))}
         </div>
+
+        {legend.length > 0 && (
+          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-ink-100 px-4 pt-3">
+            {legend.map(([id, name]) => (
+              <span key={id} className="flex items-center gap-1.5 text-xs text-ink-600">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COURSE_INK[id % COURSE_INK.length] }} aria-hidden="true" />
+                {name}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
