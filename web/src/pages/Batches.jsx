@@ -250,6 +250,16 @@ function WeekGrid({ batches }) {
     return () => clearInterval(t);
   }, []);
   const scrolledOnce = useRef(false);
+  /* Real rendered grid width, so chip typography reacts to actual pixels —
+     a quarter of a column is roomy on a monitor and tight on a laptop. */
+  const gridEl = useRef(null);
+  const [gridW, setGridW] = useState(0);
+  useEffect(() => {
+    const measure = () => gridEl.current && setGridW(gridEl.current.clientWidth);
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
 
   if (!active.length) return <p className="card p-6 text-sm text-ink-500">No batches yet. Create the first one.</p>;
 
@@ -309,14 +319,7 @@ function WeekGrid({ batches }) {
         colEnds[col] = toMin(b.end_time);
         return { b, col };
       });
-      placed.forEach(p => {
-        let span = 1;
-        while (p.col + span < colEnds.length && !placed.some(q =>
-          q.col === p.col + span &&
-          toMin(q.b.start_time) < toMin(p.b.end_time) && toMin(q.b.end_time) > toMin(p.b.start_time)
-        )) span++;
-        chips.push({ ...p, nCols: colEnds.length, span });
-      });
+      placed.forEach(p => chips.push({ ...p, nCols: colEnds.length }));
       cluster = [];
     };
     list.forEach(b => {
@@ -355,7 +358,7 @@ function WeekGrid({ batches }) {
   return (
     <div className="card overflow-hidden">
       <div ref={attachScroller} className="max-h-[calc(100dvh-21rem)] min-h-[22rem] overflow-auto overscroll-contain">
-        <div className="min-w-[74rem]">
+        <div ref={gridEl} className="min-w-[74rem]">
         <div className="sticky top-0 z-40 grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-ink-100 bg-white">
           <div className="sticky left-0 z-50 bg-white" aria-hidden="true" />
           {DAYS.map((d, i) => (
@@ -396,36 +399,44 @@ function WeekGrid({ batches }) {
                 <span key={h} className="absolute inset-x-0 border-t border-ink-100/70" style={{ top: yOf(h) }} aria-hidden="true" />
               ))}
 
-              {chips.map(({ b, col, nCols, span }) => {
+              {chips.map(({ b, col, nCols }) => {
                 const top = yOf(toMin(b.start_time));
                 const height = Math.max(22, yOf(toMin(b.end_time)) - top);
                 const live = i === todayIdx && liveNow(b);
-                const widthPct = (100 / nCols) * span;
-                const wide = widthPct >= 45;
-                const narrow = widthPct < 34;
+                /* Overlaps cascade: each later batch sits a step further right
+                   and on top, so the layering itself shows the clash. Hover or
+                   focus lifts a buried chip to the front. */
+                const step = 18;
+                const wPct = nCols === 1 ? 100 : Math.max(40, 100 - (nCols - 1) * step);
+                const chipPx = (((gridW || 1184) - 52) / 7) * (wPct / 100);
+                const wide = chipPx >= 96;
+                const narrow = chipPx < 60;
+                const c = chipColor(b);
                 return (
                   <Link key={b.id} to={`/app/batches/${b.id}`}
                     title={`${b.name}, ${b.start_time}–${b.end_time}${b.coach_name ? `, ${b.coach_name}` : ''}`}
-                    className="absolute overflow-hidden rounded-md text-white ring-1 ring-white transition duration-150 ease-swift hover:z-20 hover:shadow-lift hover:brightness-110"
+                    className="absolute overflow-hidden rounded-md bg-white ring-1 ring-white transition duration-150 ease-swift hover:!z-30 hover:shadow-lift focus-visible:!z-30"
                     style={{
                       top: top + 1, height: height - 2,
-                      left: `calc(${(100 / nCols) * col}% + 1px)`,
-                      width: `calc(${widthPct}% - 3px)`,
-                      backgroundColor: chipColor(b),
-                      backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,0) 45%)'
+                      left: `calc(${col * step}% + 2px)`,
+                      width: `calc(${wPct}% - 4px)`,
+                      zIndex: col + 1,
+                      color: c,
+                      borderLeft: `3px solid ${c}`,
+                      backgroundImage: `linear-gradient(${c}1f, ${c}1f)`
                     }}>
-                    <div className={narrow ? 'px-0.5 py-0.5' : 'px-1.5 py-1'}>
+                    <div className={narrow ? 'px-1 py-0.5' : 'px-1.5 py-1'}>
                       <p className={`font-semibold ${narrow ? 'text-[10px] leading-[1.25] tracking-[-0.01em]' : 'text-[11px] leading-[1.2]'}`}>
-                        {live && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white align-middle" aria-hidden="true" />}
+                        {live && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-current align-middle" aria-hidden="true" />}
                         {chipName(b.name, narrow)}
                       </p>
                       {wide && height >= 42 && (
-                        <p className="mt-px text-[10px] leading-tight text-white/75 tnum">
+                        <p className="mt-px text-[10px] leading-tight opacity-75 tnum">
                           {t12(b.start_time)[0]} – {t12(b.end_time)[0]} {t12(b.end_time)[1]}
                         </p>
                       )}
                       {wide && height >= 64 && b.coach_name && (
-                        <p className="text-[10px] leading-tight text-white/70">{b.coach_name}</p>
+                        <p className="text-[10px] leading-tight opacity-70">{b.coach_name}</p>
                       )}
                     </div>
                   </Link>
