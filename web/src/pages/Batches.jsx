@@ -361,7 +361,7 @@ function WeekGrid({ batches }) {
   return (
     <div className="card overflow-hidden">
       <div ref={attachScroller} className="max-h-[calc(100dvh-21rem)] min-h-[22rem] snap-x snap-proximity overflow-auto overscroll-contain">
-        <div ref={gridEl} className="min-w-[88rem]">
+        <div ref={gridEl} className="min-w-[108rem]">
         <div className="sticky top-0 z-40 grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-ink-100 bg-white">
           <div className="sticky left-0 z-50 bg-white" aria-hidden="true" />
           {DAYS.map((d, i) => (
@@ -411,7 +411,7 @@ function WeekGrid({ batches }) {
                    focus lifts a buried chip to the front. */
                 const step = 18;
                 const wPct = nCols === 1 ? 100 : Math.max(40, 100 - (nCols - 1) * step);
-                const chipPx = (((gridW || 1184) - 52) / 7) * (wPct / 100);
+                const chipPx = (((gridW || 1728) - 52) / 7) * (wPct / 100);
                 const wide = chipPx >= 96;
                 const narrow = chipPx < 60;
                 const c = chipColor(b);
