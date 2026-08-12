@@ -360,7 +360,7 @@ function WeekGrid({ batches }) {
 
   return (
     <div className="card overflow-hidden">
-      <div ref={attachScroller} className="max-h-[calc(100dvh-21rem)] min-h-[22rem] snap-x snap-proximity overflow-auto overscroll-contain">
+      <div ref={attachScroller} className="max-h-[max(26rem,calc(100dvh-17rem))] snap-x snap-proximity overflow-auto overscroll-contain">
         <div ref={gridEl} className="min-w-[108rem]">
         <div className="sticky top-0 z-40 grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-ink-100 bg-white">
           <div className="sticky left-0 z-50 bg-white" aria-hidden="true" />
