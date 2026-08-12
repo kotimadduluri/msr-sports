@@ -229,6 +229,15 @@ const hLabel = min => {
 const COURSE_INK = ['#223d76', '#1d5c3a', '#7b3b0d', '#463a6b', '#7a2e2e', '#215e66'];
 const chipColor = b => (b.course_id ? COURSE_INK[b.course_id % COURSE_INK.length] : '#3d4c66');
 
+/* On a chip the colour already names the programme — drop the "(Police)" tail
+   so short chips fit whole words. On very narrow chips the hour axis already
+   says morning or evening, so that prefix goes too. Tooltips keep full names. */
+const chipName = (name, narrow) => {
+  let n = (name || '').replace(/\s*\([^)]*\)\s*$/, '');
+  if (narrow) n = n.replace(/^(Morning|Evening)\s+/, '');
+  return n.replace(/\//g, '/​'); // let "Army/SSC" wrap after the slash
+};
+
 /* The whole week as a calendar: day columns, hour rows, each batch a block at
    its real slot. Idle midday hours collapse into one slim band so the morning
    and evening grounds sit close together. */
@@ -346,7 +355,7 @@ function WeekGrid({ batches }) {
   return (
     <div className="card overflow-hidden">
       <div ref={attachScroller} className="max-h-[calc(100dvh-21rem)] min-h-[22rem] overflow-auto overscroll-contain">
-        <div className="min-w-[58rem]">
+        <div className="min-w-[74rem]">
         <div className="sticky top-0 z-40 grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-ink-100 bg-white">
           <div className="sticky left-0 z-50 bg-white" aria-hidden="true" />
           {DAYS.map((d, i) => (
@@ -393,6 +402,7 @@ function WeekGrid({ batches }) {
                 const live = i === todayIdx && liveNow(b);
                 const widthPct = (100 / nCols) * span;
                 const wide = widthPct >= 45;
+                const narrow = widthPct < 34;
                 return (
                   <Link key={b.id} to={`/app/batches/${b.id}`}
                     title={`${b.name}, ${b.start_time}–${b.end_time}${b.coach_name ? `, ${b.coach_name}` : ''}`}
@@ -404,10 +414,10 @@ function WeekGrid({ batches }) {
                       backgroundColor: chipColor(b),
                       backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,0) 45%)'
                     }}>
-                    <div className="px-1.5 py-1">
-                      <p className="text-[11px] font-semibold leading-[1.15]">
+                    <div className={narrow ? 'px-0.5 py-0.5' : 'px-1.5 py-1'}>
+                      <p className={`font-semibold ${narrow ? 'text-[10px] leading-[1.25] tracking-[-0.01em]' : 'text-[11px] leading-[1.2]'}`}>
                         {live && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white align-middle" aria-hidden="true" />}
-                        {b.name}
+                        {chipName(b.name, narrow)}
                       </p>
                       {wide && height >= 42 && (
                         <p className="mt-px text-[10px] leading-tight text-white/75 tnum">
