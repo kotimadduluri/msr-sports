@@ -106,7 +106,7 @@ export function Columns({ data, height = 200, format = v => v }) {
   const short = v => v >= 1e5 ? `${(v / 1e5).toFixed(1)}L` : v >= 1000 ? `${Math.round(v / 1000)}k` : Math.round(v);
 
   return (
-    <div className="relative select-none" onMouseLeave={() => setHover(null)}>
+    <div className="relative select-none" onMouseLeave={() => setHover(null)} onTouchEnd={() => setHover(null)}>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Monthly totals">
         {ticks.map((t, i) => (
           <g key={i}>
@@ -120,15 +120,20 @@ export function Columns({ data, height = 200, format = v => v }) {
           const cx = PL + band * i + band / 2;
           const top = y(d.value);
           const on = hover === i;
+          const isLast = i === n - 1;
+          /* current period reads at full strength; history sits back at 0.72 */
+          const dim = on ? 1 : hover !== null ? 0.45 : isLast ? 1 : 0.72;
           return (
-            <g key={i} onMouseEnter={() => setHover(i)}>
+            <g key={i} onMouseEnter={() => setHover(i)} onTouchStart={() => setHover(i)}>
               <rect x={cx - band / 2} y={PT} width={band} height={H - PT - PB} fill="transparent" />
               {/* 4px rounded cap, square at the baseline */}
               <path d={`M${cx - bw / 2} ${H - PB} L${cx - bw / 2} ${top + 4} Q${cx - bw / 2} ${top} ${cx - bw / 2 + 4} ${top}
                         L${cx + bw / 2 - 4} ${top} Q${cx + bw / 2} ${top} ${cx + bw / 2} ${top + 4} L${cx + bw / 2} ${H - PB} Z`}
-                fill={SERIES} opacity={hover === null || on ? 1 : 0.45} />
+                fill={SERIES} opacity={dim} />
               <text x={cx} y={H - 8} fontSize="11" fill={MUTED} textAnchor="middle">{d.label}</text>
-              {on && <text x={cx} y={top - 8} fontSize="12" fontWeight="700" fill="#1f1f1c" textAnchor="middle">{format(d.value)}</text>}
+              {on
+                ? <text x={cx} y={top - 8} fontSize="12" fontWeight="700" fill="#1f1f1c" textAnchor="middle">{format(d.value)}</text>
+                : isLast && <text x={cx} y={top - 8} fontSize="11" fontWeight="600" fill="#454540" textAnchor="middle">{format(d.value)}</text>}
             </g>
           );
         })}
@@ -139,29 +144,42 @@ export function Columns({ data, height = 200, format = v => v }) {
 
 /* ---------------- sparkline for stat tiles ---------------- */
 export function Spark({ values, className = 'h-8 w-full' }) {
+  const grad = useId().replace(/:/g, '');
   if (!values?.length) return null;
   const W = 100, H = 28;
   const min = Math.min(...values), max = Math.max(...values);
   const span = max - min || 1;
   const pts = values.map((v, i) => [i * W / (values.length - 1 || 1), H - 3 - ((v - min) / span) * (H - 6)]);
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+  const last = pts[pts.length - 1];
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={className} aria-hidden="true">
-      <path d={pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ')}
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className={className} aria-hidden="true"
+      style={{ overflow: 'visible' }}>
+      <defs>
+        <linearGradient id={`sp${grad}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={SERIES} stopOpacity="0.14" />
+          <stop offset="100%" stopColor={SERIES} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${line} L${last[0].toFixed(1)} ${H} L${pts[0][0].toFixed(1)} ${H} Z`} fill={`url(#sp${grad})`} />
+      <path d={line}
         fill="none" stroke={SERIES} strokeWidth="2" vectorEffect="non-scaling-stroke"
         strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={last[0]} cy={last[1]} r="3" fill={SERIES}
+        stroke={SURFACE} strokeWidth="2" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
 
 /* ---------------- attendance heat strip ---------------- */
 export function HeatStrip({ days }) {
-  const tone = s => s === 'present' ? 'bg-emerald-500' : s === 'late' ? 'bg-amber-400'
-    : s === 'leave' ? 'bg-sky-400' : s === 'absent' ? 'bg-rose-500' : 'bg-ink-200';
+  const tone = s => s === 'present' ? 'bg-good' : s === 'late' ? 'bg-warn'
+    : s === 'leave' ? 'bg-info' : s === 'absent' ? 'bg-critical' : 'bg-ink-200';
   return (
     <div className="flex flex-wrap gap-1">
       {days.map(d => (
         <span key={d.date} title={`${d.date}: ${d.status}`}
-          className={`h-6 w-6 rounded-md ${tone(d.status)} opacity-90 transition hover:opacity-100`} />
+          className={`h-6 w-6 rounded-[3px] ${tone(d.status)} opacity-90 transition hover:opacity-100`} />
       ))}
     </div>
   );

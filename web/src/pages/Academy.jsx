@@ -52,15 +52,15 @@ export default function Academy() {
 
   const DeleteBtn = ({ kind, id }) => me?.role === 'admin' && (
     <button onClick={() => remove(kind, id)} aria-label="Delete"
-      className="rounded-lg p-1.5 text-ink-400 transition hover:bg-rose-50 hover:text-critical">
+      className="rounded-lg p-1.5 text-ink-400 transition hover:bg-critical-50 hover:text-critical">
       <IconClose className="h-4 w-4" />
     </button>
   );
 
   const PublishPill = ({ kind, item }) => (
     <button onClick={() => togglePublish(kind, item)}
-      className={`pill ${item.published ? 'bg-emerald-50 text-emerald-700' : 'bg-ink-100 text-ink-500'}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${item.published ? 'bg-emerald-500' : 'bg-ink-400'}`} />
+      className={`pill ${item.published ? 'bg-good-50 text-good-700' : 'bg-ink-100 text-ink-500'}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${item.published ? 'bg-good' : 'bg-ink-400'}`} />
       {item.published ? 'On the website' : 'Hidden'}
     </button>
   );
@@ -137,7 +137,7 @@ export default function Academy() {
 
       {tab === 'cutoffs' && (!benchmarks ? <Loading rows={8} /> : (
         <>
-          <p className="rounded-xl bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+          <p className="rounded-xl bg-warn-50 px-4 py-2.5 text-sm text-warn-700">
             These targets drive every “ready / close / needs work” verdict. Check them against the
             current official notification before a recruitment season.
           </p>

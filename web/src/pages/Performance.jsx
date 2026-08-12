@@ -72,7 +72,7 @@ export default function Performance() {
                   {data.rows.map((r, i) => (
                     <div key={r.id} className="flex items-center gap-3 px-4 py-3">
                       <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
-                        i < 3 ? 'bg-amber-100 text-amber-700' : 'bg-ink-100 text-ink-500'}`}>{i + 1}</span>
+                        i < 3 ? 'bg-warn-100 text-warn-700' : 'bg-ink-100 text-ink-500'}`}>{i + 1}</span>
                       <div className="min-w-0 flex-1">
                         <Link to={`/app/students/${r.id}`} className="truncate font-semibold text-msr-700 hover:underline">{r.name}</Link>
                         <p className="truncate text-xs text-ink-500">

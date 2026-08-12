@@ -37,11 +37,12 @@ export default function Login() {
       <div className="relative w-full max-w-sm">
         <div className="mb-7 text-center">
           <Logo className="mx-auto h-16 w-16" />
-          <h1 className="mt-4 text-2xl font-extrabold text-white">MSR Sports Academy</h1>
-          <p className="mt-1 text-sm text-msr-200">Chirala · Andhra Pradesh</p>
+          <h1 className="font-display mt-4 text-3xl font-bold uppercase tracking-wide text-white">MSR Sports Academy</h1>
+          <div className="mx-auto mt-3 h-1 w-12 rounded bg-saffron-400" />
+          <p className="mt-3 text-sm text-msr-200">Chirala · Andhra Pradesh</p>
         </div>
 
-        <form onSubmit={submit} className="animate-pop card space-y-4 p-6">
+        <form onSubmit={submit} className="animate-pop card space-y-4 rounded-3xl p-7">
           <div>
             <label className="label" htmlFor="u">Phone or email</label>
             <input id="u" className="input" autoComplete="username" inputMode="text" enterKeyHint="next"
@@ -56,7 +57,7 @@ export default function Login() {
           </div>
 
           {error && (
-            <p className="flex items-start gap-2 rounded-xl bg-rose-50 px-3 py-2.5 text-sm text-rose-700">
+            <p className="flex items-start gap-2 rounded-xl bg-critical-50 px-3 py-2.5 text-sm text-critical-700">
               <IconAlert className="mt-px h-4 w-4 shrink-0" />{error}
             </p>
           )}

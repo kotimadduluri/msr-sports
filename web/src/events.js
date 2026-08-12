@@ -13,7 +13,7 @@ export const unitLabel = unit =>
 
 /* readiness colours used everywhere a cut-off verdict appears */
 export const READINESS = {
-  ready: { label: 'Ready', cls: 'bg-emerald-50 text-emerald-700' },
-  borderline: { label: 'Close', cls: 'bg-amber-50 text-amber-700' },
-  'at-risk': { label: 'Needs work', cls: 'bg-rose-50 text-rose-700' }
+  ready: { label: 'Ready', cls: 'bg-good-50 text-good-700' },
+  borderline: { label: 'Close', cls: 'bg-warn-50 text-warn-700' },
+  'at-risk': { label: 'Needs work', cls: 'bg-critical-50 text-critical-700' }
 };

@@ -22,11 +22,14 @@ export default {
           400: '#a2a299', 500: '#83837a', 600: '#6a6a62', 700: '#454540',
           800: '#33332f', 900: '#1f1f1c'
         },
-        /* data-viz + status (validated: see dataviz palette) */
+        /* data-viz + status (validated: see dataviz palette). Ramps derived
+           from the base values so tints/washes stay in the same voice —
+           pages use these, never raw Tailwind emerald/amber/rose. */
         series: { 1: '#2a78d6', 2: '#eb6834' },
-        good: '#0ca30c',
-        warn: '#fab219',
-        critical: '#d03b3b'
+        good: { DEFAULT: '#0ca30c', 50: '#eaf7ea', 100: '#d4efd4', 600: '#0a8a0a', 700: '#0a7d0a' },
+        warn: { DEFAULT: '#fab219', 50: '#fef6e2', 100: '#fdecc2', 600: '#b57900', 700: '#8f6000' },
+        critical: { DEFAULT: '#d03b3b', 50: '#fbeaea', 100: '#f6d6d6', 600: '#b52f2f', 700: '#9c2727' },
+        info: { DEFAULT: '#2a78d6', 50: '#e9f2fc', 100: '#d3e4f9', 700: '#1d5497' }
       },
       fontFamily: {
         sans: ['Inter Variable', 'Inter var', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
@@ -38,8 +41,9 @@ export default {
       },
       borderRadius: { xl: '0.875rem', '2xl': '1.125rem', '3xl': '1.5rem' },
       boxShadow: {
-        card: '0 1px 2px rgba(15,28,54,.05), 0 1px 3px rgba(15,28,54,.04)',
-        lift: '0 4px 12px rgba(15,28,54,.08), 0 1px 3px rgba(15,28,54,.05)',
+        /* navy-tinted, layered: tight contact + soft ambient. Never pure black. */
+        card: '0 1px 2px rgba(15,28,54,.06), 0 1px 3px rgba(15,28,54,.04)',
+        lift: '0 2px 4px rgba(15,28,54,.06), 0 12px 32px -12px rgba(15,28,54,.16)',
         pop: '0 16px 40px -12px rgba(15,28,54,.28)'
       },
       /* one easing voice for the whole product: a strong ease-out for things

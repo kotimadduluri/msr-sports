@@ -141,23 +141,34 @@ export default function Fees() {
             </div>
           )}
 
-          {tab === 'due' && invoices?.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {AGE_BUCKETS.map(b => {
-                const list = invoices.filter(i => bucketOf(i) === b);
-                if (!list.length) return null;
-                return (
-                  <span key={b.key} className={`rounded-lg px-2.5 py-1 text-2xs font-bold ${
-                    b.key === '90' ? 'bg-rose-50 text-rose-700' : b.key === '60' ? 'bg-amber-50 text-amber-700' : 'bg-ink-100 text-ink-600'}`}>
-                    {b.label} · {list.length} bills · {rupees(list.reduce((a, i) => a + i.balance, 0))}
-                  </span>
-                );
-              })}
-              <button onClick={() => { setReminded(new Set()); setRemindOpen(true); }} className="btn-primary btn-sm ml-auto">
-                <IconWhatsapp className="h-4 w-4" /> Remind all
-              </button>
-            </div>
-          )}
+          {tab === 'due' && invoices?.length > 0 && (() => {
+            const buckets = AGE_BUCKETS.map(b => {
+              const list = invoices.filter(i => bucketOf(i) === b);
+              return { ...b, count: list.length, sum: list.reduce((a, i) => a + i.balance, 0) };
+            }).filter(b => b.count > 0);
+            const total = buckets.reduce((a, b) => a + b.sum, 0);
+            const COLOR = { '90': 'bg-critical', '60': 'bg-warn', '30': 'bg-ink-300' };
+            return (
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex h-2 flex-1 overflow-hidden rounded-full bg-ink-100 shadow-[inset_0_1px_1px_rgba(15,28,54,.06)]">
+                  {buckets.map(b => (
+                    <span key={b.key} className={COLOR[b.key]} style={{ width: (total ? b.sum / total * 100 : 0) + '%' }} />
+                  ))}
+                </div>
+                <button onClick={() => { setReminded(new Set()); setRemindOpen(true); }} className="btn-primary btn-sm ml-auto">
+                  <IconWhatsapp className="h-4 w-4" /> Remind all
+                </button>
+                <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1.5">
+                  {buckets.map(b => (
+                    <span key={b.key} className="flex items-center gap-1.5 text-2xs font-semibold text-ink-600">
+                      <span className={`h-2 w-2 rounded-full ${COLOR[b.key]}`} />
+                      {b.label} · {b.count} bills · {rupees(b.sum)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {!invoices ? <Loading rows={6} /> : invoices.length === 0 ? (
             <Empty title={tab === 'due' ? 'No overdue fees' : 'No bills for this month yet'}
@@ -173,7 +184,7 @@ export default function Fees() {
                     <p className="truncate text-xs text-ink-500">
                       {i.period}{i.type === 'hostel' && <span className="font-bold text-saffron-700"> · Hostel</span>} · {i.batch_name || 'No batch'} · due {shortDate(i.due_date)}
                       {tab === 'due' && ageDays(i.due_date) > 0 && (
-                        <span className={ageDays(i.due_date) > 90 ? ' font-semibold text-rose-600' : ageDays(i.due_date) > 30 ? ' font-semibold text-amber-600' : ''}>
+                        <span className={ageDays(i.due_date) > 90 ? ' font-semibold text-critical' : ageDays(i.due_date) > 30 ? ' font-semibold text-warn-600' : ''}>
                           {' '}· {ageDays(i.due_date)}d late
                         </span>
                       )}
@@ -181,13 +192,13 @@ export default function Fees() {
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <div className="text-right">
-                      <p className="font-semibold">{rupees(i.balance)}</p>
+                      <p className="font-semibold tnum">{rupees(i.balance)}</p>
                       <Badge status={i.status} />
                     </div>
                     <a className="btn-ghost btn-sm hidden sm:inline-flex" target="_blank" rel="noreferrer"
                       href={waLink(i.guardian_phone || i.phone,
                         msg('feeReminder', { name: i.student_name, admission_no: i.admission_no }, i.balance, i.period, upi))}>
-                      <IconWhatsapp className="h-4 w-4 text-emerald-600" /> Remind
+                      <IconWhatsapp className="h-4 w-4 text-good-600" /> Remind
                     </a>
                   </div>
                 </div>
@@ -211,7 +222,7 @@ export default function Fees() {
                   {p.fee_type === 'hostel' && <span className="font-bold text-saffron-700"> · Hostel</span>}
                 </p>
               </div>
-              <p className="font-semibold text-emerald-700">{rupees(p.amount)}</p>
+              <p className="font-semibold text-good-700 tnum">{rupees(p.amount)}</p>
             </button>
           ))}
         </div>
@@ -226,13 +237,13 @@ export default function Fees() {
           <div className="max-h-80 space-y-1.5 overflow-y-auto">
             {(invoices || []).filter(i => i.balance > 0).map(i => (
               <div key={i.id} className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 ${
-                reminded.has(i.id) ? 'bg-emerald-50' : 'bg-ink-50'}`}>
+                reminded.has(i.id) ? 'bg-good-50' : 'bg-ink-50'}`}>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-ink-900">{i.student_name}</p>
                   <p className="text-2xs text-ink-500">{rupees(i.balance)} · {ageDays(i.due_date)}d late</p>
                 </div>
                 {reminded.has(i.id) ? (
-                  <span className="flex items-center gap-1 text-2xs font-bold text-emerald-700">
+                  <span className="flex items-center gap-1 text-2xs font-bold text-good-700">
                     <IconCircleCheck className="h-4 w-4" /> Sent
                   </span>
                 ) : (
@@ -240,7 +251,7 @@ export default function Fees() {
                     onClick={() => setReminded(prev => new Set(prev).add(i.id))}
                     href={waLink(i.guardian_phone || i.phone,
                       msg('feeReminder', { name: i.student_name, admission_no: i.admission_no }, i.balance, i.period, upi))}>
-                    <IconWhatsapp className="h-4 w-4 text-emerald-600" /> Open
+                    <IconWhatsapp className="h-4 w-4 text-good-600" /> Open
                   </a>
                 )}
               </div>

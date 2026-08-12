@@ -29,10 +29,10 @@ async function flushQueue() {
 /* Four states, always in the same order, always the same colour.
    Buttons are 44px so they work with a thumb on a cold morning. */
 const STATUSES = [
-  { key: 'present', label: 'P', full: 'Present', on: 'bg-emerald-600 text-white shadow-card' },
-  { key: 'absent', label: 'A', full: 'Absent', on: 'bg-rose-600 text-white shadow-card' },
-  { key: 'late', label: 'L', full: 'Late', on: 'bg-amber-500 text-white shadow-card' },
-  { key: 'leave', label: 'Lv', full: 'Leave', on: 'bg-sky-600 text-white shadow-card' }
+  { key: 'present', label: 'P', full: 'Present', on: 'bg-good-600 text-white shadow-card' },
+  { key: 'absent', label: 'A', full: 'Absent', on: 'bg-critical-600 text-white shadow-card' },
+  { key: 'late', label: 'L', full: 'Late', on: 'bg-warn text-white shadow-card' },
+  { key: 'leave', label: 'Lv', full: 'Leave', on: 'bg-info text-white shadow-card' }
 ];
 
 export default function Attendance() {
@@ -136,7 +136,7 @@ export default function Attendance() {
       <PageHead title="Attendance" sub="Tap a status against each name, then save once for the whole ground" />
 
       {pending > 0 && (
-        <p className="flex items-center gap-2 rounded-xl bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800">
+        <p className="flex items-center gap-2 rounded-xl bg-warn-50 px-4 py-2.5 text-sm font-semibold text-warn-700">
           <IconAlert className="h-4 w-4 shrink-0" />
           {pending} roll call{pending > 1 ? 's' : ''} saved on this phone, will sync when the network returns
         </p>
@@ -191,7 +191,7 @@ export default function Attendance() {
                   <p className="flex items-center gap-1.5 text-2xs text-ink-400">
                     <span className="font-mono">{r.admission_no}</span>
                     {r.availability_note && (
-                      <span className="truncate rounded-md bg-amber-50 px-1.5 py-0.5 font-semibold text-amber-700">
+                      <span className="truncate rounded-md bg-warn-50 px-1.5 py-0.5 font-semibold text-warn-700">
                         {r.availability_note}
                       </span>
                     )}
@@ -242,12 +242,12 @@ export default function Attendance() {
                 </div>
                 <div className="w-24 shrink-0">
                   <div className="h-1.5 overflow-hidden rounded-full bg-ink-100">
-                    <div className={`h-full rounded-full ${s.pct >= 80 ? 'bg-emerald-500' : s.pct >= 60 ? 'bg-amber-500' : 'bg-rose-500'}`}
+                    <div className={`h-full rounded-full ${s.pct >= 80 ? 'bg-good' : s.pct >= 60 ? 'bg-warn' : 'bg-critical'}`}
                       style={{ width: `${s.pct || 0}%` }} />
                   </div>
                 </div>
                 <p className={`w-11 shrink-0 text-right font-bold tabular-nums ${
-                  s.pct >= 80 ? 'text-emerald-600' : s.pct >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>
+                  s.pct >= 80 ? 'text-good-600' : s.pct >= 60 ? 'text-warn-600' : 'text-critical'}`}>
                   {s.pct === null ? '—' : s.pct + '%'}
                 </p>
               </li>
@@ -261,8 +261,8 @@ export default function Attendance() {
           hint="No student has missed three or more sessions this week." />
       ) : (
         <>
-          <div className="flex items-start justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3">
-            <p className="flex items-start gap-2 text-sm text-amber-800">
+          <div className="flex items-start justify-between gap-3 rounded-xl bg-warn-50 px-4 py-3">
+            <p className="flex items-start gap-2 text-sm text-warn-700">
               <IconAlert className="mt-px h-4 w-4 shrink-0" />
               These students missed three or more sessions this week. A message to the parent usually brings them back.
             </p>
@@ -277,7 +277,7 @@ export default function Attendance() {
                 </Link>
                 <a className="btn-ghost btn-sm shrink-0" target="_blank" rel="noreferrer"
                   href={waLink(a.guardian_phone || a.phone, msg('absence', a, a.absents))}>
-                  <IconWhatsapp className="h-4 w-4 text-emerald-600" /> Message
+                  <IconWhatsapp className="h-4 w-4 text-good-600" /> Message
                 </a>
               </li>
             ))}

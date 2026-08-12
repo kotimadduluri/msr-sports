@@ -18,12 +18,12 @@ export function BatchChips({ b }) {
   const near = !full && b.student_count >= 0.8 * b.capacity;
   return (
     <div className="mt-2 flex flex-wrap gap-1.5">
-      <span className={`pill ${full ? 'bg-rose-50 text-critical' : near ? 'bg-amber-50 text-amber-700' : 'bg-msr-50 text-msr-700'}`}>
+      <span className={`pill ${full ? 'bg-critical-50 text-critical' : near ? 'bg-warn-50 text-warn-700' : 'bg-msr-50 text-msr-700'}`}>
         {b.student_count}/{b.capacity} students
       </span>
-      {full && <span className="pill bg-rose-50 text-critical">Full</span>}
+      {full && <span className="pill bg-critical-50 text-critical">Full</span>}
       {b.att30_pct != null && (
-        <span className={`pill ${b.att30_pct >= 85 ? 'bg-emerald-50 text-good' : b.att30_pct >= 70 ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-critical'}`}>
+        <span className={`pill ${b.att30_pct >= 85 ? 'bg-good-50 text-good-700' : b.att30_pct >= 70 ? 'bg-warn-50 text-warn-700' : 'bg-critical-50 text-critical'}`}>
           {b.att30_pct}% attendance
         </span>
       )}

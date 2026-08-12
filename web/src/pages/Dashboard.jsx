@@ -120,13 +120,13 @@ export default function Dashboard() {
                 <Link to={`/app/attendance?batch=${b.id}`} className="row-hover flex items-center justify-between gap-3 px-4 py-3.5">
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-ink-900">{b.name}</p>
-                    <p className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-500">
+                    <p className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-500 tnum">
                       <IconClock className="h-3.5 w-3.5" />{b.start_time}–{b.end_time} · {b.students} students
                     </p>
                   </div>
                   {b.marked > 0
-                    ? <span className="pill bg-emerald-50 text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />Marked</span>
-                    : <span className="pill bg-amber-50 text-amber-700"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" />Pending</span>}
+                    ? <span className="pill bg-good-50 text-good-700"><span className="h-1.5 w-1.5 rounded-full bg-good" />Marked</span>
+                    : <span className="pill bg-warn-50 text-warn-700"><span className="h-1.5 w-1.5 rounded-full bg-warn" />Pending</span>}
                 </Link>
               </li>
             ))}
@@ -135,12 +135,12 @@ export default function Dashboard() {
 
         <section className="card flex flex-col p-5">
           <h2 className="font-bold text-ink-900">New enquiries</h2>
-          <p className="mt-4 text-5xl font-extrabold leading-none text-msr-800">{d.enquiries.new || 0}</p>
+          <p className="mt-4 font-display text-6xl font-bold leading-none text-msr-800 tnum">{d.enquiries.new || 0}</p>
           <p className="mt-2 text-sm text-ink-500">{d.enquiries.week || 0} came in this week</p>
           <Link to="/app/enquiries" className="btn-ghost mt-4">Follow up</Link>
           <div className="mt-auto border-t border-ink-100 pt-4">
             <p className="text-2xs font-semibold uppercase tracking-wider text-ink-500">Joined in last 30 days</p>
-            <p className="mt-1 text-2xl font-bold text-ink-900">{d.students.joined_30d}</p>
+            <p className="mt-1 font-display text-3xl font-bold text-ink-900 tnum">{d.students.joined_30d}</p>
           </div>
         </section>
       </div>

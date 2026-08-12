@@ -90,7 +90,7 @@ export default function Expenses() {
                     <p className="font-semibold">{rupees(e.amount)}</p>
                     {me?.role === 'admin' && (
                       <button onClick={() => remove(e.id)} aria-label="Delete expense"
-                        className="rounded-lg p-1.5 text-ink-400 transition hover:bg-rose-50 hover:text-critical">
+                        className="rounded-lg p-1.5 text-ink-400 transition hover:bg-critical-50 hover:text-critical">
                         <IconClose className="h-4 w-4" />
                       </button>
                     )}

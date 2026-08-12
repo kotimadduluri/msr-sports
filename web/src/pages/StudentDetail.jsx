@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api, rupees, shortDate, secsToTime, waLink, todayISO, monthISO } from '../api';
-import { Loading, Badge, Modal, Field, Stat, useToast, Segmented, PrintArea } from '../components.jsx';
+import { Loading, Badge, Modal, Field, Stat, useToast, Segmented, PrintArea, Avatar } from '../components.jsx';
 import { HeatStrip } from '../charts.jsx';
 import { IconChevronLeft, IconPhone, IconWhatsapp, IconRupee, IconPlus, IconSpark, IconSettings, IconShare } from '../icons.jsx';
 import { EVENTS, unitFor, READINESS } from '../events.js';
@@ -112,32 +112,38 @@ export default function StudentDetail() {
         <IconChevronLeft className="h-4 w-4" /> All students
       </Link>
 
-      <div className="card p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-[1.7rem] font-extrabold leading-tight text-ink-900 sm:text-3xl">{s.name}</h1>
-            <p className="text-sm text-ink-500">
-              {s.admission_no} · {s.gender === 'F' ? 'Female' : 'Male'} · Joined {shortDate(s.join_date)}
-            </p>
-            <p className="mt-1 text-sm">{s.course_name || 'No programme'} · {s.batch_name || 'No batch'}</p>
-            {s.availability_note && (
-              <p className="mt-1.5 inline-block rounded-lg bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
-                {s.availability_note}
-              </p>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
+      <div className="card overflow-hidden">
+        <div className="surface-command relative p-5 text-white">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-4">
+              <Avatar name={s.name} className="h-14 w-14 text-lg" />
+              <div className="min-w-0">
+                <h1 className="text-2xl font-extrabold leading-tight text-white sm:text-3xl">{s.name}</h1>
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-white/60">
+                  <span className="rounded-md bg-white/10 px-1.5 py-0.5 font-mono text-xs text-white/80">{s.admission_no}</span>
+                  <span>{s.gender === 'F' ? 'Female' : 'Male'} · Joined {shortDate(s.join_date)}</span>
+                </p>
+                <p className="mt-1 text-sm text-white/70">{s.course_name || 'No programme'} · {s.batch_name || 'No batch'}</p>
+                {s.availability_note && (
+                  <p className="mt-1.5 inline-block rounded-lg bg-saffron-400/20 px-2 py-1 text-xs font-semibold text-saffron-200">
+                    {s.availability_note}
+                  </p>
+                )}
+              </div>
+            </div>
             <Badge status={s.status} />
-            {s.phone && <a href={`tel:${s.phone}`} className="btn-ghost"><IconPhone className="h-[18px] w-[18px]" /> Call</a>}
-            {s.balance > 0 && (
-              <a href={waLink(s.guardian_phone || s.phone, reminder())} target="_blank" rel="noreferrer" className="btn-ghost">
-                <IconWhatsapp className="h-[18px] w-[18px] text-emerald-600" /> Remind
-              </a>
-            )}
-            <button onClick={openCard} className="btn-ghost"><IconSpark className="h-[18px] w-[18px]" /> Progress card</button>
-            <button onClick={openEdit} className="btn-ghost" aria-label="Edit student"><IconSettings className="h-[18px] w-[18px]" /></button>
-            <button onClick={() => setPayOpen(true)} className="btn-primary"><IconRupee className="h-[18px] w-[18px]" /> Record payment</button>
           </div>
+        </div>
+        <div className="flex flex-wrap gap-2 bg-white p-4">
+          {s.phone && <a href={`tel:${s.phone}`} className="btn-ghost"><IconPhone className="h-[18px] w-[18px]" /> Call</a>}
+          {s.balance > 0 && (
+            <a href={waLink(s.guardian_phone || s.phone, reminder())} target="_blank" rel="noreferrer" className="btn-ghost">
+              <IconWhatsapp className="h-[18px] w-[18px] text-good-600" /> Remind
+            </a>
+          )}
+          <button onClick={openCard} className="btn-ghost"><IconSpark className="h-[18px] w-[18px]" /> Progress card</button>
+          <button onClick={openEdit} className="btn-ghost" aria-label="Edit student"><IconSettings className="h-[18px] w-[18px]" /></button>
+          <button onClick={() => setPayOpen(true)} className="btn-primary"><IconRupee className="h-[18px] w-[18px]" /> Record payment</button>
         </div>
       </div>
 
@@ -243,7 +249,7 @@ export default function StudentDetail() {
                       <p className="font-mono text-xs text-ink-500">{p.receipt_no}</p>
                       <p className="text-sm">{shortDate(p.paid_on)} · {p.mode}</p>
                     </div>
-                    <p className="font-semibold text-emerald-700">{rupees(p.amount)}</p>
+                    <p className="font-semibold text-good-700">{rupees(p.amount)}</p>
                   </div>
                 ))}
               </div>
@@ -390,7 +396,7 @@ export default function StudentDetail() {
               <div className="flex flex-wrap gap-2">
                 <a className="btn-ghost" target="_blank" rel="noreferrer"
                   href={waLink(card.student.guardian_phone || card.student.phone, msg('progressCard', card))}>
-                  <IconWhatsapp className="h-[18px] w-[18px] text-emerald-600" /> Message
+                  <IconWhatsapp className="h-[18px] w-[18px] text-good-600" /> Message
                 </a>
                 <button onClick={() => window.print()} className="btn-ghost">Print</button>
                 <button onClick={sharePdf} className="btn-accent">

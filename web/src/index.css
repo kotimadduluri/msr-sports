@@ -24,9 +24,14 @@
 
   h1, h2, h3 { @apply tracking-[-0.02em]; }
 
-  /* one visible focus style everywhere, keyboard only */
+  /* one visible focus style everywhere, keyboard only. Saffron is THE
+     interaction colour; outline (not ring) survives overflow-hidden parents
+     and never shifts layout. */
   :focus-visible {
-    @apply outline-none ring-2 ring-msr-500 ring-offset-2 ring-offset-white rounded-lg;
+    border-radius: 0.5rem;
+    outline: 2px solid theme(colors.saffron.400);
+    outline-offset: 2px;
+    box-shadow: none;
   }
 
   /* numbers that sit in columns must align */
@@ -43,9 +48,12 @@
 
 @layer components {
   /* ---------- surfaces ---------- */
+  /* hairline + tight contact + soft ambient, all navy-tinted: depth without
+     a visible "drop shadow". Blur stays ≤24px for cheap-phone paint budgets. */
   .card {
-    @apply rounded-2xl bg-white shadow-card;
-    box-shadow: 0 0 0 1px var(--hairline), 0 1px 2px rgb(15 28 54 / .05);
+    @apply rounded-2xl bg-white;
+    box-shadow: 0 0 0 1px var(--hairline), 0 1px 2px rgb(15 28 54 / .06),
+                0 8px 24px -12px rgb(15 28 54 / .08);
   }
   .card-hover { @apply transition-[transform,box-shadow] duration-200 ease-swift hover:shadow-lift; }
 
@@ -56,8 +64,18 @@
            active:scale-[.97] disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-sm { @apply min-h-[2.25rem] rounded-lg px-3 text-[13px]; }
-  .btn-primary { @apply btn bg-msr-800 text-white shadow-card hover:bg-msr-900; }
-  .btn-accent  { @apply btn bg-saffron-400 text-msr-950 shadow-card hover:bg-saffron-300; }
+  /* filled buttons carry a machined top edge; on press the light flips to an
+     inset shadow — the swap in light direction is what sells the press */
+  .btn-primary {
+    @apply btn bg-msr-800 text-white hover:bg-msr-900;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .16), 0 1px 2px rgb(15 28 54 / .25);
+  }
+  .btn-primary:active { box-shadow: inset 0 1px 2px rgb(15 28 54 / .3); }
+  .btn-accent {
+    @apply btn bg-saffron-400 text-msr-950 hover:bg-saffron-300;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .35), 0 1px 2px rgb(123 59 13 / .28);
+  }
+  .btn-accent:active { box-shadow: inset 0 1px 2px rgb(123 59 13 / .3); }
   .btn-ghost   { @apply btn bg-white text-ink-700 hover:bg-ink-50; box-shadow: 0 0 0 1px var(--hairline); }
   .btn-quiet   { @apply btn bg-ink-100 text-ink-700 hover:bg-ink-200; }
   .btn-danger  { @apply btn bg-critical text-white hover:brightness-95; }
@@ -83,7 +101,11 @@
   .seg { @apply flex gap-1 rounded-xl bg-ink-100 p-1; }
   .seg-item { @apply min-h-[2.25rem] flex-1 whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold text-ink-600
               transition duration-150 ease-swift active:scale-[.96]; }
-  .seg-item-on { @apply bg-white text-ink-900 shadow-card; }
+  .seg-item-on {
+    @apply bg-white text-ink-900;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .7), 0 0 0 1px rgb(15 28 54 / .05),
+                0 1px 2px rgb(15 28 54 / .08);
+  }
 
   .skeleton { @apply relative overflow-hidden rounded-lg bg-ink-100; }
   .skeleton::after {
@@ -94,6 +116,34 @@
 
   .hairline { box-shadow: 0 0 0 1px var(--hairline); }
   .safe-bottom { padding-bottom: calc(var(--safe-b) + 0.5rem); }
+
+  /* ---------- dark command chrome (sidebar / hero bands) ----------
+     Deep navy = vertical gradient + a soft top light + machined edge.
+     Text on it uses white at fixed alphas: 90% primary, 60% secondary,
+     40% muted — never full #fff, never below 40%. */
+  .surface-command {
+    background:
+      radial-gradient(100% 40% at 50% 0%, rgb(93 132 201 / 0.12), transparent 70%),
+      linear-gradient(180deg, theme(colors.msr.800) 0%, theme(colors.msr.950) 100%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.07);
+  }
+  /* groove separator on dark: dark line + light line beneath */
+  .sep-dark {
+    border-top: 1px solid rgb(0 0 0 / 0.25);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06);
+  }
+  /* film grain for ONE large static surface (the sidebar). The noise lives
+     inside a background *image*, so it rasterises once and tiles for free —
+     never apply a live filter: url() for this. */
+  .grain { position: relative; }
+  .grain::after {
+    content: '';
+    position: absolute; inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: 0.5;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
 }
 
 @layer utilities {

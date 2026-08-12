@@ -94,7 +94,13 @@ export function Loading({ rows = 5, kind = 'list' }) {
     return (
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="card p-4"><div className="skeleton h-3 w-20" /><div className="skeleton mt-3 h-7 w-24" /></div>
+          <div key={i} className="card p-4">
+            <div className="flex items-start justify-between">
+              <div className="skeleton mt-1 h-3 w-20" />
+              <div className="skeleton h-9 w-9 rounded-xl" />
+            </div>
+            <div className="skeleton mt-2 h-8 w-24" />
+          </div>
         ))}
       </div>
     );
@@ -115,8 +121,11 @@ export function Loading({ rows = 5, kind = 'list' }) {
 export function Empty({ title, hint, action, icon }) {
   return (
     <div className="card animate-fade-up px-6 py-14 text-center">
-      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-ink-100 text-ink-500">
-        {icon || <IconInbox className="h-6 w-6" />}
+      <div className="relative mx-auto mb-3 h-14 w-14">
+        <span className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-saffron-100" aria-hidden="true" />
+        <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-msr-50 text-msr-600">
+          {icon || <IconInbox className="h-6 w-6" />}
+        </div>
       </div>
       <p className="font-semibold text-ink-800">{title}</p>
       {hint && <p className="mx-auto mt-1 max-w-sm text-sm text-ink-500">{hint}</p>}
@@ -126,22 +135,59 @@ export function Empty({ title, hint, action, icon }) {
 }
 
 /* ---------------- stat tile ----------------
-   label · value · sub, with an optional sparkline. Value uses proportional
-   figures (tabular-nums makes big numbers look loose). */
+   label · value · sub, with an optional sparkline. The value speaks in the
+   display face (Barlow, the "big numbers" voice); the icon lives in a tinted
+   chip instead of floating naked in the corner. */
 export function Stat({ label, value, sub, tone = 'default', icon, spark }) {
   const tones = {
-    default: 'text-ink-900', good: 'text-good', warn: 'text-saffron-600', bad: 'text-critical'
+    default: 'text-ink-900', good: 'text-good-700', warn: 'text-saffron-600', bad: 'text-critical'
+  };
+  const chips = {
+    default: 'bg-msr-50 text-msr-700', good: 'bg-good-50 text-good-700',
+    warn: 'bg-saffron-50 text-saffron-600', bad: 'bg-critical-50 text-critical'
   };
   return (
     <div className="card card-hover p-4 sm:p-5">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-2xs font-semibold uppercase tracking-wider text-ink-500">{label}</p>
-        {icon && <span className="shrink-0 text-ink-400">{icon}</span>}
+        <p className="pt-0.5 text-2xs font-semibold uppercase tracking-wider text-ink-500">{label}</p>
+        {icon && (
+          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${chips[tone]}`}>
+            {icon}
+          </span>
+        )}
       </div>
-      <p className={`mt-2 text-[1.6rem] font-bold leading-none sm:text-[1.75rem] ${tones[tone]}`}>{value}</p>
+      <p className={`mt-1.5 font-display text-[2rem] font-bold leading-none tracking-tight tnum sm:text-[2.25rem] ${tones[tone]}`}>
+        {value}
+      </p>
       {sub && <p className="mt-2 text-xs text-ink-500">{sub}</p>}
       {spark && <div className="mt-3">{spark}</div>}
     </div>
+  );
+}
+
+/* ---------------- avatar ----------------
+   Deterministic identity for people rows: hue hashed from the name but
+   quantised to six curated brand-adjacent duotones (light wash + darker
+   text of the same hue), so a 200-row roster gets variety without ever
+   leaving the palette. Pure CSS — no images to load. */
+const AVATAR_PALETTE = [
+  ['#dbe6f6', '#223d76'],  // msr
+  ['#fdedc8', '#7b3b0d'],  // saffron
+  ['#dcefe3', '#1d5c3a'],  // green
+  ['#f3e2e2', '#7a2e2e'],  // clay
+  ['#e6e0f0', '#463a6b'],  // violet
+  ['#e0eef0', '#215e66']   // teal
+];
+export function Avatar({ name = '', className = 'h-9 w-9 text-[13px]' }) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  const [bg, fg] = AVATAR_PALETTE[h % AVATAR_PALETTE.length];
+  return (
+    <span
+      className={`inline-flex shrink-0 select-none items-center justify-center rounded-full font-bold uppercase ${className}`}
+      style={{ background: bg, color: fg, boxShadow: 'inset 0 0 0 1px rgb(24 43 80 / 0.08)' }}>
+      {name.split(' ').filter(Boolean).slice(0, 2).map(w => w[0]).join('')}
+    </span>
   );
 }
 
@@ -166,7 +212,7 @@ const DOT = {
 };
 export function Badge({ status }) {
   return (
-    <span className={`pill ${CHIP[status] || 'bg-ink-100 text-ink-600'}`}>
+    <span className={`pill ring-1 ring-inset ring-ink-900/5 ${CHIP[status] || 'bg-ink-100 text-ink-600'}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${DOT[status] || 'bg-ink-400'}`} />
       {status || '—'}
     </span>

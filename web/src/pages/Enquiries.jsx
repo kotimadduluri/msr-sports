@@ -78,7 +78,7 @@ export default function Enquiries() {
                     </a>
                     <a target="_blank" rel="noreferrer" className="btn-ghost btn-sm"
                       href={waLink(e.phone, msg('enquiryReply', e.name, e.interest))}>
-                      <IconWhatsapp className="h-4 w-4 text-emerald-600" /> WhatsApp
+                      <IconWhatsapp className="h-4 w-4 text-good-600" /> WhatsApp
                     </a>
                   </div>
                 </div>

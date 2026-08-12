@@ -1,15 +1,13 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { api, shortDate, rupees } from '../api';
-import { Loading, Empty, Badge, Modal, Field, useToast, PageHead } from '../components.jsx';
+import { Loading, Empty, Badge, Modal, Field, useToast, PageHead, Avatar } from '../components.jsx';
 import { IconSearch, IconPlus, IconDownload, IconStudents, IconChevronRight } from '../icons.jsx';
 
 const blank = {
   name: '', gender: 'M', phone: '', guardian_name: '', guardian_phone: '', village: '',
   dob: '', course_id: '', batch_id: '', height_cm: '', weight_kg: '', hostel_fee: '', address: '', notes: ''
 };
-
-const initials = n => n.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
 export default function Students() {
   const toast = useToast();
@@ -96,9 +94,7 @@ export default function Students() {
             {data.students.map(s => (
               <li key={s.id}>
                 <Link to={`/app/students/${s.id}`} className="card card-hover flex items-center gap-3 p-3.5">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-msr-50 text-sm font-bold text-msr-700">
-                    {initials(s.name)}
-                  </span>
+                  <Avatar name={s.name} className="h-11 w-11 text-sm" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold text-ink-900">{s.name}</span>
                     <span className="mt-0.5 block truncate text-xs text-ink-500">
@@ -115,20 +111,19 @@ export default function Students() {
           {/* desktop: the full table */}
           <div className="card hidden overflow-hidden lg:block">
             <table className="w-full">
-              <thead className="border-b border-ink-100 bg-ink-50/70">
+              <thead className="sticky top-0 z-10 border-b border-ink-100 bg-ink-50/95 backdrop-blur-sm">
                 <tr>
                   <th className="th">Student</th><th className="th">Batch</th><th className="th">Phone</th>
                   <th className="th">Village</th><th className="th">Joined</th><th className="th">Status</th>
+                  <th className="th w-10"><span className="sr-only">Open</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
                 {data.students.map(s => (
-                  <tr key={s.id} className="row-hover">
+                  <tr key={s.id} className="row-hover group/row">
                     <td className="td">
                       <Link to={`/app/students/${s.id}`} className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-msr-50 text-2xs font-bold text-msr-700">
-                          {initials(s.name)}
-                        </span>
+                        <Avatar name={s.name} className="h-9 w-9 text-2xs" />
                         <span>
                           <span className="block font-semibold text-ink-900 hover:text-msr-700">{s.name}</span>
                           <span className="block font-mono text-2xs text-ink-400">{s.admission_no}</span>
@@ -140,6 +135,9 @@ export default function Students() {
                     <td className="td text-ink-600">{s.village || '—'}</td>
                     <td className="td tnum text-ink-600">{shortDate(s.join_date)}</td>
                     <td className="td"><Badge status={s.status} /></td>
+                    <td className="td">
+                      <IconChevronRight className="h-4 w-4 text-ink-300 opacity-0 transition group-hover/row:opacity-100" />
+                    </td>
                   </tr>
                 ))}
               </tbody>

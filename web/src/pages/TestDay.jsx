@@ -150,7 +150,7 @@ export default function TestDay() {
                       <span className="font-mono">{r.admission_no}</span>
                       {target && <span>target {fmtTarget(target)}</span>}
                       {r.availability_note && (
-                        <span className="flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 font-semibold text-amber-700">
+                        <span className="flex items-center gap-1 rounded-md bg-warn-50 px-1.5 py-0.5 font-semibold text-warn-700">
                           <IconAlert className="h-3 w-3" /> {r.availability_note}
                         </span>
                       )}

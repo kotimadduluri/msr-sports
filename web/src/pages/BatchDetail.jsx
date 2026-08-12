@@ -65,23 +65,29 @@ export default function BatchDetail() {
         <IconChevronLeft className="h-4 w-4" /> All batches
       </Link>
 
-      <div className="card p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-[1.7rem] font-extrabold leading-tight text-ink-900 sm:text-3xl">
-              {b.name}
-              {b.active === 0 && <span className="pill ml-2 align-middle bg-ink-100 text-ink-500">Inactive</span>}
-            </h1>
-            <p className="mt-1 text-sm text-ink-500">{b.start_time}–{b.end_time}, {b.days}</p>
-            <p className="text-sm text-ink-500">{b.venue}</p>
-            <p className="mt-1 text-sm">{b.coach_name || 'No coach assigned'}{b.course_name ? `, ${b.course_name}` : ''}</p>
+      <div className="card overflow-hidden">
+        <div className="surface-command relative p-5 text-white">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-white sm:text-3xl">
+                {b.name}
+              </h1>
+              <p className="mt-1 text-sm text-white/60">{b.start_time}–{b.end_time}, {b.days}</p>
+              <p className="text-sm text-white/60">{b.venue}</p>
+              <p className="mt-1 text-sm text-white/70">{b.coach_name || 'No coach assigned'}{b.course_name ? `, ${b.course_name}` : ''}</p>
+            </div>
+            {b.active === 0 && <span className="pill bg-white/10 text-white/70">Inactive</span>}
+          </div>
+        </div>
+        <div className="bg-white p-4">
+          <div className="-mt-2">
             <BatchChips b={b} />
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-2">
             <Link to={`/app/attendance?batch=${b.id}`} className="btn-primary"><IconCheck className="h-[18px] w-[18px]" /> Roll call</Link>
             <Link to="/app/testday" className="btn-ghost"><IconTimer className="h-[18px] w-[18px]" /> Test day</Link>
             <button onClick={() => { setSent(new Set()); setAnnOpen(true); }} className="btn-ghost">
-              <IconWhatsapp className="h-[18px] w-[18px] text-emerald-600" /> Message batch
+              <IconWhatsapp className="h-[18px] w-[18px] text-good-600" /> Message batch
             </button>
             <button onClick={openEdit} className="btn-ghost"><IconSettings className="h-[18px] w-[18px]" /> Edit</button>
           </div>
@@ -144,13 +150,13 @@ export default function BatchDetail() {
           <div className="max-h-80 space-y-1.5 overflow-y-auto">
             {roster.map(s => (
               <div key={s.id} className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 ${
-                sent.has(s.id) ? 'bg-emerald-50' : 'bg-ink-50'}`}>
+                sent.has(s.id) ? 'bg-good-50' : 'bg-ink-50'}`}>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-ink-900">{s.name}</p>
                   <p className="text-2xs text-ink-500">{s.guardian_phone || s.phone}</p>
                 </div>
                 {sent.has(s.id) ? (
-                  <span className="flex items-center gap-1 text-2xs font-bold text-emerald-700">
+                  <span className="flex items-center gap-1 text-2xs font-bold text-good-700">
                     <IconCircleCheck className="h-4 w-4" /> Sent
                   </span>
                 ) : (
@@ -158,7 +164,7 @@ export default function BatchDetail() {
                     target="_blank" rel="noreferrer"
                     onClick={() => setSent(prev => new Set(prev).add(s.id))}
                     href={waLink(s.guardian_phone || s.phone, annMsg.trim())}>
-                    <IconWhatsapp className="h-4 w-4 text-emerald-600" /> Open
+                    <IconWhatsapp className="h-4 w-4 text-good-600" /> Open
                   </a>
                 )}
               </div>
@@ -182,7 +188,7 @@ export default function BatchDetail() {
                     <span className="block font-semibold text-ink-900">{t.name}</span>
                     <span className="block text-xs text-ink-500">{t.start_time}–{t.end_time}, {t.coach_name || 'no coach'}</span>
                   </span>
-                  <span className={`pill shrink-0 ${full ? 'bg-rose-50 text-critical' : 'bg-msr-50 text-msr-700'}`}>
+                  <span className={`pill shrink-0 ${full ? 'bg-critical-50 text-critical' : 'bg-msr-50 text-msr-700'}`}>
                     {t.student_count}/{t.capacity}{full ? ' full' : ''}
                   </span>
                 </button>
