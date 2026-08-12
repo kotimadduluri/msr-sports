@@ -308,18 +308,19 @@ function WeekGrid({ batches }) {
 
   return (
     <div className="card overflow-x-auto">
-      <div className="min-w-[50rem] pb-3">
+      <div className="min-w-[54rem] pb-3">
         <div className="grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-ink-100">
           <div aria-hidden="true" />
           {DAYS.map((d, i) => (
-            <div key={d} className={`border-l border-ink-100 py-2.5 text-center ${i === todayIdx ? 'bg-msr-50/50' : ''}`}>
-              <p className={`text-2xs font-bold uppercase tracking-widest ${i === todayIdx ? 'text-msr-800' : 'text-ink-400'}`}>{d}</p>
+            <div key={d} className={`relative border-l border-ink-100 py-3 text-center ${i === todayIdx ? 'bg-msr-50/50' : ''}`}>
+              <p className={`text-2xs font-bold uppercase tracking-widest ${i === todayIdx ? 'text-msr-900' : 'text-ink-400'}`}>{d}</p>
               {i === todayIdx
                 ? <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-saffron-600">Today</p>
                 : <p className="mt-0.5 text-[10px] font-semibold text-ink-300 tnum">
                     {(n => n ? `${n} ${n === 1 ? 'batch' : 'batches'}` : 'Rest day')(
                       cols[i].placed.reduce((a, x) => a + (x.kind === 'stack' ? x.items.length : 1), 0))}
                   </p>}
+              {i === todayIdx && <span className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-saffron-500" aria-hidden="true" />}
             </div>
           ))}
         </div>
@@ -332,6 +333,12 @@ function WeekGrid({ batches }) {
                 {hLabel(h)}
               </span>
             ))}
+            {nowVisible && (
+              <span className="absolute right-1.5 z-20 -translate-y-1/2 rounded-md bg-saffron-500 px-1 py-px text-[9px] font-bold text-white tnum shadow-[0_1px_2px_rgba(15,28,54,.2)]"
+                style={{ top: yOf(nowMin) }}>
+                {`${((now.getHours() + 11) % 12) + 1}:${String(now.getMinutes()).padStart(2, '0')}`}
+              </span>
+            )}
           </div>
 
           {cols.map(({ day, placed }, i) => (
@@ -349,16 +356,16 @@ function WeekGrid({ batches }) {
                   const height = yOf(item.end) - top;
                   return (
                     <div key={`s${item.start}`}
-                      className="absolute inset-x-0 flex flex-col overflow-hidden rounded-md border-l-2 border-msr-500 bg-msr-100/80 py-0.5"
-                      style={{ top: top + 1, height: height - 2, left: 2, width: 'calc(100% - 4px)' }}>
+                      className="absolute flex flex-col divide-y divide-ink-100/60 overflow-hidden rounded-lg border-l-[3px] border-msr-500 bg-white shadow-[0_1px_2px_rgba(15,28,54,.06)] ring-1 ring-ink-900/[.06]"
+                      style={{ top: top + 1, height: height - 2, left: 3, width: 'calc(100% - 6px)' }}>
                       {item.items.map(b => {
                         const live = i === todayIdx && liveNow(b);
                         return (
                           <Link key={b.id} to={`/app/batches/${b.id}`}
                             title={`${b.name}, ${b.start_time}–${b.end_time}${b.coach_name ? `, ${b.coach_name}` : ''}`}
                             className={`flex min-h-0 flex-1 items-center gap-1 px-1.5 text-[10px] leading-tight transition ${
-                              live ? 'bg-good-50 text-good-700 hover:bg-good-100' : 'text-msr-900 hover:bg-msr-100'}`}>
-                            <span className="shrink-0 font-semibold text-ink-500 tnum">{t12(b.start_time)[0]}</span>
+                              live ? 'bg-good-50 text-good-700 hover:bg-good-100' : 'text-ink-900 hover:bg-msr-50'}`}>
+                            <span className="shrink-0 font-semibold text-ink-400 tnum">{t12(b.start_time)[0]}</span>
                             <span className="truncate font-bold">{b.name}</span>
                             {live && <span className="h-1.5 w-1.5 shrink-0 self-center animate-pulse rounded-full bg-good" aria-hidden="true" />}
                           </Link>
@@ -374,14 +381,14 @@ function WeekGrid({ batches }) {
                 return (
                   <Link key={b.id} to={`/app/batches/${b.id}`}
                     title={`${b.name}, ${b.start_time}–${b.end_time}${b.coach_name ? `, ${b.coach_name}` : ''}`}
-                    className={`absolute overflow-hidden rounded-md border-l-2 px-1.5 py-1 transition hover:z-10 hover:shadow-lift ${
-                      live ? 'border-good bg-good-50 hover:bg-good-100' : 'border-msr-500 bg-msr-100/80 hover:bg-msr-100'}`}
+                    className={`absolute overflow-hidden rounded-lg border-l-[3px] px-1.5 py-1 shadow-[0_1px_2px_rgba(15,28,54,.06)] ring-1 transition duration-150 ease-swift hover:z-10 hover:-translate-y-px hover:shadow-lift ${
+                      live ? 'border-good bg-good-50/80 ring-good/20' : 'border-msr-500 bg-white ring-ink-900/[.06]'}`}
                     style={{
                       top: top + 1, height: height - 2,
-                      left: `calc(${(100 / lanes) * lane}% + 2px)`,
-                      width: `calc(${100 / lanes}% - 4px)`
+                      left: `calc(${(100 / lanes) * lane}% + 3px)`,
+                      width: `calc(${100 / lanes}% - 6px)`
                     }}>
-                    <p className={`flex items-center gap-1 truncate text-[11px] font-bold leading-tight ${live ? 'text-good-700' : 'text-msr-900'}`}>
+                    <p className={`flex items-center gap-1 truncate text-[11px] font-bold leading-tight ${live ? 'text-good-700' : 'text-ink-900'}`}>
                       {live && <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-good" aria-hidden="true" />}
                       <span className="truncate">{b.name}</span>
                     </p>
@@ -395,9 +402,7 @@ function WeekGrid({ batches }) {
 
               {i === todayIdx && nowVisible && (
                 <span className="pointer-events-none absolute inset-x-0 z-20 border-t-2 border-saffron-500"
-                  style={{ top: yOf(nowMin) }} aria-hidden="true">
-                  <span className="absolute -top-[5px] left-0 h-2 w-2 rounded-full bg-saffron-500" />
-                </span>
+                  style={{ top: yOf(nowMin) }} aria-hidden="true" />
               )}
             </div>
           ))}
@@ -405,7 +410,10 @@ function WeekGrid({ batches }) {
           {merged.filter(s => s.type === 'gap').map(s => (
             <div key={s.start}
               className="pointer-events-none absolute inset-x-0 z-10 flex items-center justify-center border-y border-ink-100 bg-ink-50/90"
-              style={{ top: yOf(s.start), height: GAP }}>
+              style={{
+                top: yOf(s.start), height: GAP,
+                backgroundImage: 'repeating-linear-gradient(-45deg, rgba(15,28,54,.035) 0 5px, transparent 5px 11px)'
+              }}>
               <span className="text-[10px] font-semibold uppercase tracking-widest text-ink-400">
                 {hLabel(s.start)} to {hLabel(s.end)} · ground is quiet
               </span>
@@ -419,7 +427,16 @@ function WeekGrid({ batches }) {
 
 export default function Batches() {
   const toast = useToast();
-  const [tab, setTab] = useState('timeline');
+  const [tab, setTab] = useState('schedule');
+  /* Day or Week is a way of looking at the schedule, not a separate place —
+     it lives inside the Schedule tab and the choice is remembered. */
+  const [view, setViewState] = useState(() => {
+    try { return localStorage.getItem('msr-batches-view') || 'timeline'; } catch { return 'timeline'; }
+  });
+  const setView = v => {
+    setViewState(v);
+    try { localStorage.setItem('msr-batches-view', v); } catch { /* private mode */ }
+  };
   const [batches, setBatches] = useState(null);
   const [courses, setCourses] = useState(null);
   const [coaches, setCoaches] = useState([]);
@@ -463,11 +480,24 @@ export default function Batches() {
         </>} />
 
       <Segmented value={tab} onChange={setTab}
-        options={[['timeline', 'Day'], ['week', 'Week'], ['batches', 'All batches'], ['courses', 'Programmes']]} />
+        options={[['schedule', 'Schedule'], ['batches', 'All batches'], ['courses', 'Programmes']]} />
 
-      {tab === 'timeline' && (!batches ? <Loading rows={5} /> : <Timeline batches={batches} />)}
-
-      {tab === 'week' && (!batches ? <Loading rows={5} /> : <WeekGrid batches={batches} />)}
+      {tab === 'schedule' && (!batches ? <Loading rows={5} /> : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-ink-900">
+              {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+            </p>
+            <div className="seg w-fit" role="tablist" aria-label="Schedule view">
+              {[['timeline', 'Day'], ['week', 'Week']].map(([k, l]) => (
+                <button key={k} role="tab" aria-selected={view === k} onClick={() => setView(k)}
+                  className={`seg-item px-5 ${view === k ? 'seg-item-on' : ''}`}>{l}</button>
+              ))}
+            </div>
+          </div>
+          {view === 'timeline' ? <Timeline batches={batches} /> : <WeekGrid batches={batches} />}
+        </>
+      ))}
 
       {tab === 'batches' && (!batches ? <Loading rows={5} /> : (
         <div className="card divide-y divide-ink-100">
