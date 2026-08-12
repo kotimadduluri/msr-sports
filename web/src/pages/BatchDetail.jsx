@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api, rupees, waLink } from '../api';
-import { Loading, Modal, Field, useToast, Stat } from '../components.jsx';
+import { Loading, Modal, Field, useToast, Stat, Avatar } from '../components.jsx';
 import { IconChevronLeft, IconChevronRight, IconCheck, IconTimer, IconSettings, IconPhone, IconWhatsapp, IconCircleCheck } from '../icons.jsx';
-import { BatchChips, BatchFormFields, batchPayload } from './Batches.jsx';
+import { BatchChips, BatchFormFields, batchPayload, DayDots, CapacityMeter, liveNow } from './Batches.jsx';
 
 /* One batch, in full: who is in it, how healthy it is, and the two things a
    coach does with it every day — roll call and test entry. Students can be
@@ -69,12 +69,22 @@ export default function BatchDetail() {
         <div className="surface-command relative p-5 text-white">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-white sm:text-3xl">
+              <h1 className="flex flex-wrap items-center gap-2.5 font-display text-2xl font-bold uppercase tracking-wide text-white sm:text-3xl">
                 {b.name}
+                {liveNow(b) && (
+                  <span className="pill bg-good/20 font-sans normal-case tracking-normal text-good-50">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-good" /> On ground now
+                  </span>
+                )}
               </h1>
-              <p className="mt-1 text-sm text-white/60">{b.start_time}–{b.end_time}, {b.days}</p>
-              <p className="text-sm text-white/60">{b.venue}</p>
-              <p className="mt-1 text-sm text-white/70">{b.coach_name || 'No coach assigned'}{b.course_name ? `, ${b.course_name}` : ''}</p>
+              <p className="mt-1 text-sm text-white/60 tnum">{b.start_time}–{b.end_time} at {b.venue}</p>
+              <p className="mt-1.5 flex items-center gap-1.5 text-sm text-white/70">
+                {b.coach_name
+                  ? <><Avatar name={b.coach_name} className="h-6 w-6 text-[10px]" /> {b.coach_name}</>
+                  : 'No coach assigned'}
+                {b.course_name && <span className="text-white/50">· {b.course_name}</span>}
+              </p>
+              <div className="mt-3"><DayDots days={b.days} dark /></div>
             </div>
             {b.active === 0 && <span className="pill bg-white/10 text-white/70">Inactive</span>}
           </div>
@@ -96,7 +106,8 @@ export default function BatchDetail() {
 
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Students" value={`${b.student_count}/${b.capacity}`}
-          tone={b.student_count >= b.capacity ? 'bad' : b.student_count >= 0.8 * b.capacity ? 'warn' : 'default'} />
+          tone={b.student_count >= b.capacity ? 'bad' : b.student_count >= 0.8 * b.capacity ? 'warn' : 'default'}
+          spark={<CapacityMeter b={b} className="" />} />
         <Stat label="Attendance, 30 days" value={b.att30_pct != null ? `${b.att30_pct}%` : '—'}
           tone={b.att30_pct == null ? 'default' : b.att30_pct >= 85 ? 'good' : b.att30_pct >= 70 ? 'warn' : 'bad'} />
         <Stat label="Fees due" value={rupees(b.due_total || 0)} tone={b.due_total > 0 ? 'warn' : 'good'} />
@@ -110,9 +121,12 @@ export default function BatchDetail() {
         <div className="divide-y divide-ink-100">
           {roster.map(s => (
             <div key={s.id} className="flex items-center gap-3 px-4 py-3">
-              <Link to={`/app/students/${s.id}`} className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-ink-900">{s.name}</p>
-                <p className="text-xs text-ink-500">{s.admission_no}, {s.gender === 'F' ? 'Female' : 'Male'}</p>
+              <Link to={`/app/students/${s.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+                <Avatar name={s.name} className="h-9 w-9 text-2xs" />
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold text-ink-900">{s.name}</span>
+                  <span className="block font-mono text-2xs text-ink-400">{s.admission_no} · {s.gender === 'F' ? 'Female' : 'Male'}</span>
+                </span>
               </Link>
               <a href={`tel:${s.phone}`} className="btn-ghost btn-sm" aria-label={`Call ${s.name}`}>
                 <IconPhone className="h-4 w-4" />
@@ -184,9 +198,10 @@ export default function BatchDetail() {
               return (
                 <button key={t.id} onClick={() => moveTo(t.id)}
                   className="row-hover flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left hairline">
-                  <span>
+                  <span className="min-w-0 flex-1">
                     <span className="block font-semibold text-ink-900">{t.name}</span>
                     <span className="block text-xs text-ink-500">{t.start_time}–{t.end_time}, {t.coach_name || 'no coach'}</span>
+                    <CapacityMeter b={t} className="mt-1.5" />
                   </span>
                   <span className={`pill shrink-0 ${full ? 'bg-critical-50 text-critical' : 'bg-msr-50 text-msr-700'}`}>
                     {t.student_count}/{t.capacity}{full ? ' full' : ''}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { api, rupees, getUser } from '../api';
-import { Loading, Modal, Field, useToast, PageHead, Segmented } from '../components.jsx';
+import { Loading, Modal, Field, useToast, PageHead, Segmented, Avatar } from '../components.jsx';
 import { IconPlus, IconSunrise, IconSunset, IconChevronRight, IconUser } from '../icons.jsx';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -11,6 +11,48 @@ const t12 = t => {
   const [h, m] = (t || '0:0').split(':').map(Number);
   return [`${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')}`, h >= 12 ? 'PM' : 'AM'];
 };
+
+/* Is this batch on the ground right now? Real clock, batch's own days. */
+export const liveNow = b => {
+  const now = new Date();
+  if (!(b.days || '').includes(DAYS[(now.getDay() + 6) % 7])) return false;
+  const hm = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  return hm >= b.start_time && hm < b.end_time;
+};
+
+/* How full the batch is, as a bar: numbers say 48/60, the meter shows it. */
+export function CapacityMeter({ b, className = 'mt-2.5' }) {
+  const pct = Math.min(100, Math.round(100 * b.student_count / (b.capacity || 1)));
+  const full = b.student_count >= b.capacity;
+  const near = !full && b.student_count >= 0.8 * b.capacity;
+  return (
+    <div className={`h-1.5 overflow-hidden rounded-full bg-ink-100 shadow-[inset_0_1px_1px_rgba(15,28,54,.05)] ${className}`}
+      role="img" aria-label={`${b.student_count} of ${b.capacity} seats taken`}>
+      <span className={`block h-full rounded-full ${full ? 'bg-critical' : near ? 'bg-warn' : 'bg-msr-500'}`}
+        style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
+/* The week at a glance: one lettered chip per day, lit when the batch runs. */
+export function DayDots({ days = '', dark = false }) {
+  return (
+    <div className="flex gap-1" role="img" aria-label={`Runs ${days.split(',').join(', ')}`}>
+      {DAYS.map(d => {
+        const on = days.includes(d);
+        return (
+          <span key={d} title={d}
+            className={`flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold ${
+              on
+                ? dark ? 'bg-white/15 text-white' : 'bg-msr-100 text-msr-800'
+                : dark ? 'bg-white/5 text-white/30' : 'bg-ink-100 text-ink-400'}`}>
+            {d[0]}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 /* One capacity/health chip row, shared by the timeline and the flat list. */
 export function BatchChips({ b }) {
@@ -104,13 +146,21 @@ function Timeline({ batches }) {
     <div className="space-y-6">
       {groups.map(({ label, Icon, list }) => (
         <div key={label}>
-          <p className="flex items-center gap-2 text-2xs font-bold uppercase tracking-widest text-ink-500">
-            <Icon className="h-4 w-4 text-saffron-500" /> {label}
-          </p>
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-saffron-50 text-saffron-600">
+              <Icon className="h-4 w-4" />
+            </span>
+            <p className="text-2xs font-bold uppercase tracking-widest text-ink-600">{label}</p>
+            <p className="text-2xs font-semibold text-ink-400 tnum">
+              {list.length} {list.length === 1 ? 'batch' : 'batches'} · {list.reduce((a, b) => a + b.student_count, 0)} students
+            </p>
+            <span className="h-px flex-1 bg-ink-200/70" aria-hidden="true" />
+          </div>
           <div className="mt-3">
             {list.map(b => {
               const [time, ap] = t12(b.start_time);
               const [end, endAp] = t12(b.end_time);
+              const live = liveNow(b);
               return (
                 <Link key={b.id} to={`/app/batches/${b.id}`}
                   className="group grid grid-cols-[3.4rem_1.25rem_1fr] gap-x-1 sm:grid-cols-[4rem_1.5rem_1fr]">
@@ -120,21 +170,35 @@ function Timeline({ batches }) {
                   </div>
                   <div className="relative justify-self-center">
                     <span className="absolute bottom-0 top-0 w-px bg-ink-200" aria-hidden="true" />
-                    <span className="absolute left-1/2 top-[1.15rem] h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-saffron-400 ring-4 ring-ink-50 transition group-hover:bg-saffron-500" aria-hidden="true" />
+                    <span className={`absolute left-1/2 top-[1.15rem] -translate-x-1/2 rounded-full ring-4 ring-ink-50 transition ${
+                      live ? 'h-3 w-3 animate-pulse bg-good' : 'h-2.5 w-2.5 bg-saffron-400 group-hover:bg-saffron-500'}`} aria-hidden="true" />
                   </div>
                   <div className="pb-3">
-                    <div className="card card-hover p-4">
+                    <div className={`card card-hover p-4 ${live ? 'outline outline-2 outline-good/25' : ''}`}>
                       <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="font-bold text-ink-900">{b.name}</p>
+                        <div className="min-w-0">
+                          <p className="flex flex-wrap items-center gap-2 font-bold text-ink-900">
+                            <span className="truncate">{b.name}</span>
+                            {live && (
+                              <span className="pill bg-good-50 text-good-700">
+                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-good" /> On ground
+                              </span>
+                            )}
+                          </p>
                           <p className="mt-0.5 text-xs text-ink-500">
                             Till {end} {endAp} at {b.venue}
                           </p>
-                          <p className="text-xs text-ink-500">{b.coach_name || 'No coach'}{b.course_name ? `, ${b.course_name}` : ''}</p>
+                          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-600">
+                            {b.coach_name
+                              ? <><Avatar name={b.coach_name} className="h-5 w-5 text-[9px]" /> {b.coach_name}</>
+                              : <span className="text-ink-400">No coach assigned</span>}
+                            {b.course_name && <span className="truncate text-ink-400">· {b.course_name}</span>}
+                          </p>
                         </div>
                         <IconChevronRight className="mt-1 h-4 w-4 shrink-0 text-ink-300 transition group-hover:translate-x-0.5 group-hover:text-msr-700" />
                       </div>
                       <BatchChips b={b} />
+                      <CapacityMeter b={b} />
                     </div>
                   </div>
                 </Link>
@@ -200,18 +264,26 @@ export default function Batches() {
       {tab === 'batches' && (!batches ? <Loading rows={5} /> : (
         <div className="card divide-y divide-ink-100">
           {batches.map(b => (
-            <Link key={b.id} to={`/app/batches/${b.id}`} className="row-hover flex items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
+            <Link key={b.id} to={`/app/batches/${b.id}`}
+              className={`row-hover flex items-center justify-between gap-3 px-4 py-3.5 ${b.active === 0 ? 'opacity-60' : ''}`}>
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold">
                   {b.name}
                   {b.active === 0 && <span className="pill ml-2 bg-ink-100 text-ink-500">Inactive</span>}
                 </p>
-                <p className="text-xs text-ink-500">{b.course_name || 'No programme'}, {b.days}</p>
-                <p className="text-xs text-ink-500">{b.start_time}–{b.end_time} at {b.venue}</p>
+                <p className="mt-0.5 text-xs text-ink-500 tnum">
+                  {b.start_time}–{b.end_time} at {b.venue}{b.course_name ? `, ${b.course_name}` : ''}
+                </p>
+                <div className="mt-2"><DayDots days={b.days} /></div>
                 <BatchChips b={b} />
+                <CapacityMeter b={b} className="mt-2.5 max-w-sm" />
               </div>
-              <div className="flex shrink-0 items-center gap-3 text-right">
-                <p className="text-xs text-ink-500">{b.coach_name || 'No coach'}</p>
+              <div className="flex shrink-0 items-center gap-3">
+                {b.coach_name && (
+                  <span className="hidden items-center gap-1.5 text-xs text-ink-600 sm:flex">
+                    <Avatar name={b.coach_name} className="h-6 w-6 text-[10px]" /> {b.coach_name}
+                  </span>
+                )}
                 <IconChevronRight className="h-4 w-4 text-ink-300" />
               </div>
             </Link>
@@ -222,20 +294,29 @@ export default function Batches() {
       {tab === 'courses' && (!courses ? <Loading rows={5} /> : (
         <div className="grid gap-3 sm:grid-cols-2">
           {courses.map(c => (
-            <div key={c.id} className="card p-4">
+            <div key={c.id} className="card flex flex-col p-4">
               <div className="flex items-start justify-between gap-2">
                 <p className="font-bold">{c.name}</p>
-                <span className="pill bg-msr-50 text-msr-700">{c.student_count} students</span>
+                <span className="pill shrink-0 bg-msr-50 text-msr-700">{c.student_count} students</span>
               </div>
               <p className="mt-2 text-sm text-ink-600">{c.description}</p>
-              <p className="mt-3 text-sm font-semibold">
+              <p className="mt-3 text-sm font-semibold tnum">
                 {rupees(c.fee_amount)}/month
                 {c.admission_fee > 0 && <span className="font-normal text-ink-500">, {rupees(c.admission_fee)} admission</span>}
+                {c.duration_months > 0 && <span className="font-normal text-ink-500"> · {c.duration_months} months</span>}
               </p>
               {batches && (
-                <p className="mt-2 text-xs text-ink-500">
-                  {batches.filter(b => b.course_id === c.id && b.active !== 0).map(b => b.name).join(', ') || 'No batches yet'}
-                </p>
+                <div className="mt-auto flex flex-wrap gap-1.5 pt-3">
+                  {batches.filter(b => b.course_id === c.id && b.active !== 0).map(b => (
+                    <Link key={b.id} to={`/app/batches/${b.id}`}
+                      className="pill bg-ink-100 text-ink-700 transition hover:bg-msr-50 hover:text-msr-700">
+                      {b.name}
+                    </Link>
+                  ))}
+                  {!batches.some(b => b.course_id === c.id && b.active !== 0) && (
+                    <span className="text-xs text-ink-400">No batches yet</span>
+                  )}
+                </div>
               )}
             </div>
           ))}
