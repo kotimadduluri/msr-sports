@@ -347,18 +347,21 @@ function WeekGrid({ batches }) {
     .map(b => [b.course_id, b.course_name])).entries()];
 
   /* On first paint, land the viewport on the current time like a calendar app
-     does; outside ground hours, start from the top of the day. */
+     does; outside ground hours, start from the top of the day. Sideways,
+     centre today's column so the week pans out from it. */
   const attachScroller = el => {
     if (el && !scrolledOnce.current) {
       scrolledOnce.current = true;
       if (nowVisible) el.scrollTop = Math.max(0, yOf(nowMin) - 160);
+      const colW = (el.scrollWidth - 52) / 7;
+      el.scrollLeft = todayIdx * colW; // today's snap position, just after the gutter
     }
   };
 
   return (
     <div className="card overflow-hidden">
-      <div ref={attachScroller} className="max-h-[calc(100dvh-21rem)] min-h-[22rem] overflow-auto overscroll-contain">
-        <div ref={gridEl} className="min-w-[74rem]">
+      <div ref={attachScroller} className="max-h-[calc(100dvh-21rem)] min-h-[22rem] snap-x snap-proximity overflow-auto overscroll-contain">
+        <div ref={gridEl} className="min-w-[88rem]">
         <div className="sticky top-0 z-40 grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-ink-100 bg-white">
           <div className="sticky left-0 z-50 bg-white" aria-hidden="true" />
           {DAYS.map((d, i) => (
@@ -392,7 +395,7 @@ function WeekGrid({ batches }) {
 
           {cols.map(({ day, chips }, i) => (
             <div key={day}
-              className={`relative border-l border-ink-100 ${
+              className={`relative snap-start scroll-ml-[3.25rem] border-l border-ink-100 ${
                 i === todayIdx ? 'bg-msr-50/50' : chips.length === 0 ? 'bg-ink-50/60' : ''}`}
               style={{ height: totalH }}>
               {marks.map(h => yOf(h) > 0 && yOf(h) < totalH && (
