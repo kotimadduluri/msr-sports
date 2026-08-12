@@ -211,6 +211,212 @@ function Timeline({ batches }) {
   );
 }
 
+/* "HH:MM" → minutes past midnight. */
+const toMin = t => {
+  const [h, m] = (t || '0:0').split(':').map(Number);
+  return h * 60 + m;
+};
+
+/* "5 AM" style labels for the week grid's hour gutter. */
+const hLabel = min => {
+  const h = Math.floor(min / 60);
+  return `${((h + 11) % 12) + 1} ${h >= 12 ? 'PM' : 'AM'}`;
+};
+
+/* The whole week as a calendar: day columns, hour rows, each batch a block at
+   its real slot. Idle midday hours collapse into one slim band so the morning
+   and evening grounds sit close together. */
+function WeekGrid({ batches }) {
+  const active = batches.filter(b => b.active !== 0);
+  /* Re-render each minute so the now line and live blocks track the clock. */
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick(x => x + 1), 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (!active.length) return <p className="card p-6 text-sm text-ink-500">No batches yet. Create the first one.</p>;
+
+  const HOUR = 48, GAP = 34;
+  const first = Math.floor(Math.min(...active.map(b => toMin(b.start_time))) / 60) * 60;
+  const last = Math.ceil(Math.max(...active.map(b => toMin(b.end_time))) / 60) * 60;
+
+  /* Split the day into open hours and idle stretches; only stretches of two or
+     more empty hours collapse. */
+  const busy = h => active.some(b => toMin(b.start_time) < h + 60 && toMin(b.end_time) > h);
+  const segs = [];
+  for (let h = first; h < last; h += 60) {
+    const type = busy(h) ? 'open' : 'gap';
+    const prev = segs[segs.length - 1];
+    if (prev && prev.type === type) prev.end = h + 60;
+    else segs.push({ type, start: h, end: h + 60 });
+  }
+  const merged = [];
+  segs.forEach(s => {
+    const keep = s.type === 'open' || s.end - s.start >= 120 ? { ...s } : { ...s, type: 'open' };
+    const prev = merged[merged.length - 1];
+    if (prev && prev.type === 'open' && keep.type === 'open') prev.end = keep.end;
+    else merged.push(keep);
+  });
+
+  /* Time → pixel, walking the segments; gaps are a fixed slim band. */
+  const yOf = min => {
+    let y = 0;
+    for (const s of merged) {
+      if (min <= s.start) return y;
+      const len = s.type === 'gap' ? GAP : ((s.end - s.start) / 60) * HOUR;
+      if (min >= s.end) { y += len; continue; }
+      return y + ((min - s.start) / 60) * HOUR;
+    }
+    return y;
+  };
+  const totalH = merged.reduce((a, s) => a + (s.type === 'gap' ? GAP : ((s.end - s.start) / 60) * HOUR), 0);
+  const marks = [...new Set(merged.filter(s => s.type === 'open')
+    .flatMap(s => Array.from({ length: (s.end - s.start) / 60 + 1 }, (_, i) => s.start + i * 60)))]
+    .filter(h => !merged.some(s => s.type === 'gap' && (s.start === h || s.end === h)));
+
+  /* Per day: sort by start, then group batches whose times overlap. A pair
+     shares the column side by side; three or more become one stacked list
+     block, because five slivers of a column tell nobody anything. */
+  const cols = DAYS.map(day => {
+    const list = active.filter(b => (b.days || '').includes(day))
+      .sort((a, b) => toMin(a.start_time) - toMin(b.start_time));
+    const placed = [];
+    let cluster = [], clusterStart = 0, clusterEnd = -1;
+    const flush = () => {
+      if (cluster.length <= 2) {
+        cluster.forEach((b, lane) => placed.push({ kind: 'block', b, lane, lanes: cluster.length }));
+      } else {
+        placed.push({ kind: 'stack', items: cluster, start: clusterStart, end: clusterEnd });
+      }
+      cluster = [];
+    };
+    list.forEach(b => {
+      if (cluster.length && toMin(b.start_time) >= clusterEnd) flush();
+      if (!cluster.length) clusterStart = toMin(b.start_time);
+      cluster.push(b);
+      clusterEnd = Math.max(clusterEnd, toMin(b.end_time));
+    });
+    if (cluster.length) flush();
+    return { day, placed };
+  });
+
+  const now = new Date();
+  const todayIdx = (now.getDay() + 6) % 7;
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const nowVisible = merged.some(s => s.type === 'open' && nowMin >= s.start && nowMin < s.end);
+
+  return (
+    <div className="card overflow-x-auto">
+      <div className="min-w-[50rem] pb-3">
+        <div className="grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-ink-100">
+          <div aria-hidden="true" />
+          {DAYS.map((d, i) => (
+            <div key={d} className={`border-l border-ink-100 py-2.5 text-center ${i === todayIdx ? 'bg-msr-50/50' : ''}`}>
+              <p className={`text-2xs font-bold uppercase tracking-widest ${i === todayIdx ? 'text-msr-800' : 'text-ink-400'}`}>{d}</p>
+              {i === todayIdx
+                ? <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-saffron-600">Today</p>
+                : <p className="mt-0.5 text-[10px] font-semibold text-ink-300 tnum">
+                    {(n => n ? `${n} ${n === 1 ? 'batch' : 'batches'}` : 'Rest day')(
+                      cols[i].placed.reduce((a, x) => a + (x.kind === 'stack' ? x.items.length : 1), 0))}
+                  </p>}
+            </div>
+          ))}
+        </div>
+
+        <div className="relative grid grid-cols-[3.25rem_repeat(7,1fr)]">
+          <div className="relative" style={{ height: totalH }}>
+            {marks.map(h => (
+              <span key={h} className="absolute right-2 -translate-y-1/2 text-[10px] font-semibold text-ink-400 tnum"
+                style={{ top: yOf(h) }}>
+                {hLabel(h)}
+              </span>
+            ))}
+          </div>
+
+          {cols.map(({ day, placed }, i) => (
+            <div key={day}
+              className={`relative border-l border-ink-100 ${
+                i === todayIdx ? 'bg-msr-50/50' : placed.length === 0 ? 'bg-ink-50/60' : ''}`}
+              style={{ height: totalH }}>
+              {marks.map(h => yOf(h) > 0 && yOf(h) < totalH && (
+                <span key={h} className="absolute inset-x-0 border-t border-ink-100/70" style={{ top: yOf(h) }} aria-hidden="true" />
+              ))}
+
+              {placed.map(item => {
+                if (item.kind === 'stack') {
+                  const top = yOf(item.start);
+                  const height = yOf(item.end) - top;
+                  return (
+                    <div key={`s${item.start}`}
+                      className="absolute inset-x-0 flex flex-col overflow-hidden rounded-md border-l-2 border-msr-500 bg-msr-100/80 py-0.5"
+                      style={{ top: top + 1, height: height - 2, left: 2, width: 'calc(100% - 4px)' }}>
+                      {item.items.map(b => {
+                        const live = i === todayIdx && liveNow(b);
+                        return (
+                          <Link key={b.id} to={`/app/batches/${b.id}`}
+                            title={`${b.name}, ${b.start_time}–${b.end_time}${b.coach_name ? `, ${b.coach_name}` : ''}`}
+                            className={`flex min-h-0 flex-1 items-center gap-1 px-1.5 text-[10px] leading-tight transition ${
+                              live ? 'bg-good-50 text-good-700 hover:bg-good-100' : 'text-msr-900 hover:bg-msr-100'}`}>
+                            <span className="shrink-0 font-semibold text-ink-500 tnum">{t12(b.start_time)[0]}</span>
+                            <span className="truncate font-bold">{b.name}</span>
+                            {live && <span className="h-1.5 w-1.5 shrink-0 self-center animate-pulse rounded-full bg-good" aria-hidden="true" />}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+                const { b, lane, lanes } = item;
+                const top = yOf(toMin(b.start_time));
+                const height = Math.max(24, yOf(toMin(b.end_time)) - top);
+                const live = i === todayIdx && liveNow(b);
+                return (
+                  <Link key={b.id} to={`/app/batches/${b.id}`}
+                    title={`${b.name}, ${b.start_time}–${b.end_time}${b.coach_name ? `, ${b.coach_name}` : ''}`}
+                    className={`absolute overflow-hidden rounded-md border-l-2 px-1.5 py-1 transition hover:z-10 hover:shadow-lift ${
+                      live ? 'border-good bg-good-50 hover:bg-good-100' : 'border-msr-500 bg-msr-100/80 hover:bg-msr-100'}`}
+                    style={{
+                      top: top + 1, height: height - 2,
+                      left: `calc(${(100 / lanes) * lane}% + 2px)`,
+                      width: `calc(${100 / lanes}% - 4px)`
+                    }}>
+                    <p className={`flex items-center gap-1 truncate text-[11px] font-bold leading-tight ${live ? 'text-good-700' : 'text-msr-900'}`}>
+                      {live && <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-good" aria-hidden="true" />}
+                      <span className="truncate">{b.name}</span>
+                    </p>
+                    <p className="truncate text-[10px] text-ink-500 tnum">{b.start_time}–{b.end_time}</p>
+                    {height >= 60 && b.coach_name && (
+                      <p className="mt-0.5 truncate text-[10px] text-ink-500">{b.coach_name}</p>
+                    )}
+                  </Link>
+                );
+              })}
+
+              {i === todayIdx && nowVisible && (
+                <span className="pointer-events-none absolute inset-x-0 z-20 border-t-2 border-saffron-500"
+                  style={{ top: yOf(nowMin) }} aria-hidden="true">
+                  <span className="absolute -top-[5px] left-0 h-2 w-2 rounded-full bg-saffron-500" />
+                </span>
+              )}
+            </div>
+          ))}
+
+          {merged.filter(s => s.type === 'gap').map(s => (
+            <div key={s.start}
+              className="pointer-events-none absolute inset-x-0 z-10 flex items-center justify-center border-y border-ink-100 bg-ink-50/90"
+              style={{ top: yOf(s.start), height: GAP }}>
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-ink-400">
+                {hLabel(s.start)} to {hLabel(s.end)} · ground is quiet
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Batches() {
   const toast = useToast();
   const [tab, setTab] = useState('timeline');
@@ -257,9 +463,11 @@ export default function Batches() {
         </>} />
 
       <Segmented value={tab} onChange={setTab}
-        options={[['timeline', 'Day timeline'], ['batches', 'All batches'], ['courses', 'Programmes']]} />
+        options={[['timeline', 'Day'], ['week', 'Week'], ['batches', 'All batches'], ['courses', 'Programmes']]} />
 
       {tab === 'timeline' && (!batches ? <Loading rows={5} /> : <Timeline batches={batches} />)}
+
+      {tab === 'week' && (!batches ? <Loading rows={5} /> : <WeekGrid batches={batches} />)}
 
       {tab === 'batches' && (!batches ? <Loading rows={5} /> : (
         <div className="card divide-y divide-ink-100">
