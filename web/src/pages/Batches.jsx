@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { api, rupees, getUser } from '../api';
 import { Loading, Modal, Field, useToast, PageHead, Segmented, Avatar } from '../components.jsx';
@@ -240,10 +240,11 @@ function WeekGrid({ batches }) {
     const t = setInterval(() => setTick(x => x + 1), 60000);
     return () => clearInterval(t);
   }, []);
+  const scrolledOnce = useRef(false);
 
   if (!active.length) return <p className="card p-6 text-sm text-ink-500">No batches yet. Create the first one.</p>;
 
-  const HOUR = 48, GAP = 34;
+  const HOUR = 72, GAP = 36;
   const first = Math.floor(Math.min(...active.map(b => toMin(b.start_time))) / 60) * 60;
   const last = Math.ceil(Math.max(...active.map(b => toMin(b.end_time))) / 60) * 60;
 
@@ -333,13 +334,23 @@ function WeekGrid({ batches }) {
   const legend = [...new Map(active.filter(b => b.course_id && b.course_name)
     .map(b => [b.course_id, b.course_name])).entries()];
 
+  /* On first paint, land the viewport on the current time like a calendar app
+     does; outside ground hours, start from the top of the day. */
+  const attachScroller = el => {
+    if (el && !scrolledOnce.current) {
+      scrolledOnce.current = true;
+      if (nowVisible) el.scrollTop = Math.max(0, yOf(nowMin) - 160);
+    }
+  };
+
   return (
-    <div className="card overflow-x-auto">
-      <div className="min-w-[58rem] pb-3">
-        <div className="grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-ink-100">
-          <div aria-hidden="true" />
+    <div className="card overflow-hidden">
+      <div ref={attachScroller} className="max-h-[calc(100dvh-21rem)] min-h-[22rem] overflow-auto overscroll-contain">
+        <div className="min-w-[58rem]">
+        <div className="sticky top-0 z-40 grid grid-cols-[3.25rem_repeat(7,1fr)] border-b border-ink-100 bg-white">
+          <div className="sticky left-0 z-50 bg-white" aria-hidden="true" />
           {DAYS.map((d, i) => (
-            <div key={d} className={`border-l border-ink-100 py-2.5 text-center ${i === todayIdx ? 'bg-msr-50/50' : ''}`}>
+            <div key={d} className={`border-l border-ink-100 py-2.5 text-center ${i === todayIdx ? 'bg-msr-50' : ''}`}>
               <p className={`text-[10px] font-bold uppercase tracking-widest ${i === todayIdx ? 'text-saffron-600' : 'text-ink-400'}`}>{d}</p>
               <p className={`mx-auto mt-1 flex h-8 w-8 items-center justify-center rounded-full font-display text-lg font-bold tnum ${
                 i === todayIdx
@@ -352,7 +363,7 @@ function WeekGrid({ batches }) {
         </div>
 
         <div className="relative grid grid-cols-[3.25rem_repeat(7,1fr)]">
-          <div className="relative" style={{ height: totalH }}>
+          <div className="sticky left-0 z-30 bg-white" style={{ height: totalH }}>
             {marks.map(h => (
               <span key={h} className="absolute right-2 -translate-y-1/2 text-[10px] font-semibold text-ink-400 tnum"
                 style={{ top: yOf(h) }}>
@@ -385,7 +396,7 @@ function WeekGrid({ batches }) {
                 return (
                   <Link key={b.id} to={`/app/batches/${b.id}`}
                     title={`${b.name}, ${b.start_time}–${b.end_time}${b.coach_name ? `, ${b.coach_name}` : ''}`}
-                    className="absolute overflow-hidden rounded-md text-white ring-1 ring-white transition duration-150 ease-swift hover:z-30 hover:shadow-lift hover:brightness-110"
+                    className="absolute overflow-hidden rounded-md text-white ring-1 ring-white transition duration-150 ease-swift hover:z-20 hover:shadow-lift hover:brightness-110"
                     style={{
                       top: top + 1, height: height - 2,
                       left: `calc(${(100 / nCols) * col}% + 1px)`,
@@ -431,18 +442,19 @@ function WeekGrid({ batches }) {
             </div>
           ))}
         </div>
-
-        {legend.length > 0 && (
-          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-ink-100 px-4 pt-3">
-            {legend.map(([id, name]) => (
-              <span key={id} className="flex items-center gap-1.5 text-xs text-ink-600">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COURSE_INK[id % COURSE_INK.length] }} aria-hidden="true" />
-                {name}
-              </span>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
+
+      {legend.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-ink-100 px-4 py-3">
+          {legend.map(([id, name]) => (
+            <span key={id} className="flex items-center gap-1.5 text-xs text-ink-600">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COURSE_INK[id % COURSE_INK.length] }} aria-hidden="true" />
+              {name}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
